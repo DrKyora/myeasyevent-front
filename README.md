@@ -1,1 +1,1 @@
-# MyEasyEvent-front
+# myeasyevent-front
