@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx @tailwindcss/cli -i ./src/input.css -o ./dist/styles.css --watch"
+    "dev": "npx @tailwindcss/cli -i ./dist/input.css -o ./dist/styles.css --watch"
   },
   "repository": {
     "type": "git",
@@ -14,7 +14,9 @@
   "author": "kyora",
   "license": "ISC",
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.7.2",
     "@tailwindcss/cli": "^4.0.14",
+    "sweetalert2": "^11.17.2",
     "tailwindcss": "^4.0.14"
   }
 }
