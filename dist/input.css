@@ -1,1 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Lugrasimo&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap');
 @import "tailwindcss";
+
+@theme {
+    --color-blue-dianne-500: oklch(37.528% 0.04379 226.2);
+    --color-aqua-haze-500: oklch(95.57% 0.00895 214.34);
+    --color-burnt-sienna-500: oklch(67.833% 0.15593 35.185);
+}
+
+@layer base {
+    *{
+        font-family: 'Merriweather', serif;
+        font-weight: 400;
+    }
+    body{
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 100vh;
+    }
+    h1{
+        color: var(--color-aqua-haze-500);
+        font-size: var(--text-3xl);
+        font-family: 'Lugrasimo';   
+        font-weight: 400;
+    }
+    h2{
+        color: var(--color-blue-dianne-500);
+        font-size: var(--text-5xl);
+        font-family: 'Lugrasimo';   
+        font-weight: 400;
+    }
+    h3{
+        color: var(--color-blue-sienna-500);
+        font-family: 'merriweather';   
+        font-weight: 400;
+    }
+    h4{
+        color: var(--color-blue-sienna-500);
+        font-size: var(--text-xl);
+        font-family: 'merriweather';   
+        font-weight: 400;
+    }
+    a {
+        color: var(--color-aqua-haze-500);
+    }
+}

@@ -1,0 +1,97 @@
+<template id="header">
+    <header class="bg-blue-dianne-500 px-4 py-2 md:px-8 md:py-4 flex items-center relative">
+        <div class="w-12 h-12 flex-shrink-0 relative z-10">
+            <img src="/myeasyevent-front/asset/img/logo.png" alt="Logo My Easy Event" class="rounded-lg">
+        </div>
+        <h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-xl md:text-3xl">My Easy Event</h1>
+        <button id="burgerBtn" class="cursor-pointer md:hidden ml-auto rounded focus:outline-none focus:ring-2 focus:ring-blue-dianne-500">
+            <span class="block w-6 h-1 bg-burnt-sienna-500 mb-1 rounded-lg"></span>
+            <span class="block w-6 h-1 bg-burnt-sienna-500 mb-1 rounded-lg"></span>
+            <span class="block w-6 h-1 bg-burnt-sienna-500 rounded-lg"></span>
+        </button>
+        <nav id="mainNav" class="hidden mt-8 absolute right-1 top-9 z-20  md:block md:absolute md:top-0 md:right-8 md:top-0">
+            <ul class="flex flex-col min-w-1xl bg-blue-dianne-500 p-2 rounded-lg w-[160px] md:w-auto md:flex-row md:items-center md:bg-transparent md:p-0">
+                <li class="flex pb-2 mb-2 md:pb-0 md:mb-0 md:border-r-2 md:border-burnt-sienna-500 md:pr-4 md:mr-4 ">
+                    <a href="/myeasyevent-front/" data-spa class="flex nav-link">
+                        <img src="/myeasyevent-front/asset/svg/home.svg" alt="" class="mr-2">
+                        <span>Accueil</span>
+                    </a>
+                </li>
+                <li class="flex pb-2 mb-2 md:pb-0 md:mb-0 md:border-r-2 md:border-burnt-sienna-500 md:pr-4 md:mr-4">
+                    <a href="/myeasyevent-front/evenements" data-spa class="flex nav-link">
+                        <img src="/myeasyevent-front/asset/svg/calendar-event.svg" alt="" class="mr-2">
+                        <span>Événements</span>
+                    </a>
+                </li>
+                <!-- Non connecté : visible sur mobile, caché sur desktop -->
+                <li id="navRegister" class="flex pb-2 mb-2 md:pb-0 md:mb-0 md:hidden">
+                    <a href="/myeasyevent-front/register" data-spa class="flex nav-link">
+                        <img src="/myeasyevent-front/asset/svg/register.svg" alt="" class="mr-2">
+                        <span>Inscription</span>
+                    </a>
+                </li>
+                <li id="navLogin" class="flex pb-2 mb-2 md:pb-0 md:mb-0 md:hidden">
+                    <a href="/myeasyevent-front/login" data-spa class="flex nav-link">
+                        <img src="/myeasyevent-front/asset/svg/login.svg" alt="" class="mr-2">
+                        <span>Connexion</span>
+                    </a>
+                </li>
+                <!-- Connecté : visible sur mobile, caché sur desktop -->
+                <li id="navDashboard" class="flex pb-2 mb-2 md:pb-0 md:mb-0 md:hidden">
+                    <a href="/myeasyevent-front/dashboard" data-spa class="flex nav-link">
+                        <img src="/myeasyevent-front/asset/svg/dashboard.svg" alt="" class="mr-2">
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li id="navLogout" class="flex pb-2 mb-2 md:pb-0 md:mb-0 md:hidden">
+                    <button class="flex items-center bg-transparent border-none cursor-pointer text-white hover:text-burnt-sienna-300 transition-colors">
+                        <img src="/myeasyevent-front/asset/svg/logout.svg" alt="" class="mr-2">
+                        <span>Déconnexion</span>
+                    </button>
+                </li>
+                <!-- Desktop : bouton modal utilisateur -->
+                <li class="hidden md:flex">
+                    <button id="userModalBtn" class="flex items-center bg-transparent border-none cursor-pointer text-white hover:text-burnt-sienna-300 transition-colors">
+                        <img src="/myeasyevent-front/asset/svg/dashboard.svg" alt="" class="mr-2">Dashboard
+                        <img id="arrow" src="/myeasyevent-front/asset/svg/Frame.svg" alt="" class="ml-2">
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Modal utilisateur (desktop uniquement) -->
+    <div id="userModal" class="fixed hidden z-50" style="top: 4rem; right: 1rem;">
+        <div class="bg-white rounded-lg shadow-xl border border-gray-200 p-4 relative min-w-64 max-w-80">
+            <!-- Bouton fermer -->
+            <button id="closeModal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-lg w-6 h-6 flex items-center justify-center">
+                ×
+            </button>
+            <!-- Contenu pour utilisateur non connecté -->
+            <div id="notConnectedContent" class="text-center">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Mon Compte</h3>
+                <p class="text-gray-600 mb-4 text-sm">Connectez-vous ou créez un compte</p>
+                <div class="space-y-2">
+                    <button id="loginBtn" class="w-full bg-blue-dianne-500 text-white py-2 px-3 rounded text-sm hover:bg-blue-dianne-600 transition-colors">
+                        Connexion
+                    </button>
+                    <button id="registerBtn" class="w-full bg-burnt-sienna-500 text-white py-2 px-3 rounded text-sm hover:bg-burnt-sienna-600 transition-colors">
+                        Inscription
+                    </button>
+                </div>
+            </div>
+            <!-- Contenu pour utilisateur connecté -->
+            <div id="connectedContent" class="text-center hidden">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Mon Compte</h3>
+                <div class="space-y-2">
+                    <button id="dashboardBtn" class="w-full bg-blue-dianne-500 text-white py-2 px-3 rounded text-sm hover:bg-blue-dianne-600 transition-colors flex items-center justify-center">
+                        <img src="/myeasyevent-front/asset/svg/dashboard.svg" alt="" class="w-4 h-4 mr-2">Dashboard
+                    </button>
+                    <button id="logoutBtn" class="w-full bg-red-500 text-white py-2 px-3 rounded text-sm hover:bg-red-600 transition-colors">
+                        Déconnexion
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
