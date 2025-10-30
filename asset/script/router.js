@@ -2,17 +2,17 @@
 import { renderMain } from "./core.js";
 
 export const routes = {
-    '/myeasyevent-front/accueil': { template: 'accueil', title: 'Accueil - My Easy Event' },
-    '/myeasyevent-front/evenements': { template: 'evenements', title: 'Événements - My Easy Event' },
-    '/myeasyevent-front/dashboard': { template: 'dashboard', title: 'dashboard - My Easy Event' },
-    '/myeasyevent-front/contact': { template: 'contact', title: 'Contact - My Easy Event' },
-    '/myeasyevent-front/login': { template: 'login', title: 'Connexion - My Easy Event' },
-    '/myeasyevent-front/register': { template: 'register', title: 'Inscription - My Easy Event' },
-    '/myeasyevent-front/404': { template: '404', title: '404 - Page non trouvée' },
-    '/myeasyevent-front/cgu': { template: 'cgu', title: 'Conditions Générales d\'Utilisation - My Easy Event' },
-    '/myeasyevent-front/privacy-policy': { template: 'privacy-policy', title: 'Politique de Confidentialité - My Easy Event' },
-    '/myeasyevent-front/mentions-legales': { template: 'mentions-legales', title: 'Mentions Légales - My Easy Event' },
-    '/myeasyevent-front/': { template: 'accueil', title: 'Accueil - My Easy Event' }, // Route par défaut
+    '/accueil': { template: 'accueil', title: 'Accueil - My Easy Event' },
+    '/evenements': { template: 'evenements', title: 'Événements - My Easy Event' },
+    '/dashboard': { template: 'dashboard', title: 'dashboard - My Easy Event' },
+    '/contact': { template: 'contact', title: 'Contact - My Easy Event' },
+    '/login': { template: 'login', title: 'Connexion - My Easy Event' },
+    '/register': { template: 'register', title: 'Inscription - My Easy Event' },
+    '/404': { template: '404', title: '404 - Page non trouvée' },
+    '/cgu': { template: 'cgu', title: 'Conditions Générales d\'Utilisation - My Easy Event' },
+    '/privacy-policy': { template: 'privacy-policy', title: 'Politique de Confidentialité - My Easy Event' },
+    '/mentions-legales': { template: 'mentions-legales', title: 'Mentions Légales - My Easy Event' },
+    '/': { template: 'accueil', title: 'Accueil - My Easy Event' }, // Route par défaut
 };
 
 // -------------------- ROUTER --------------------

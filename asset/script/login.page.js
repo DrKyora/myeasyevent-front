@@ -28,9 +28,9 @@ export function init() {
 
     try {
       // 🔎 contrôle visuel
-      console.log('[login] POST ->', `${lib.urlBackend}api/connexions.php`);
+      console.log('[login] POST ->', `${lib.urlBackend}API/connexions.php`);
 
-      const res = await fetch(`${lib.urlBackend}api/connexions.php`, {
+      const res = await fetch(`${lib.urlBackend}API/connexions.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -49,7 +49,7 @@ export function init() {
   if (session) {
     lib.setCookie('session', session, 604800);
     lib.SuccessToast.fire({ title: "Connecté !" });
-    navigate('/myeasyevent-front/dashboard');
+    navigate('/dashboard');
     return;
   }
 

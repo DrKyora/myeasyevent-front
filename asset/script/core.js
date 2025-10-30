@@ -106,9 +106,19 @@ export async function renderMain(templateName = 'accueil', pageTitle = '') {
 
 // -------------------- ROUTING ------------------
 export function renderRoute(pathname) {
-  const route = routes[pathname] || routes['/myeasyevent-front/'];
+  // Nettoyage du pathname (supprime / en fin de chaîne, sauf pour "/")
+  const cleanPath = pathname !== '/' ? pathname.replace(/\/$/, '') : pathname;
+
+  // Trouve la route correspondante
+  const route = routes[cleanPath] || routes['/'];
+
+  // Log utile pour débogage
+  console.log(`[renderRoute] path="${pathname}" → template="${route.template}"`);
+
+  // Affiche la page correspondante
   return renderMain(route.template, route.title);
 }
+
 
 export async function displayCore() {
   await renderHeader();
@@ -173,9 +183,9 @@ function initializeUserModal() {
     userModal.classList.add('hidden');
   };
 
-  loginBtn?.addEventListener('click',   () => go('/myeasyevent-front/login'));
-  registerBtn?.addEventListener('click',() => go('/myeasyevent-front/register'));
-  dashboardBtn?.addEventListener('click', () => go('/myeasyevent-front/dashboard'));
+  loginBtn?.addEventListener('click',   () => go('/login'));
+  registerBtn?.addEventListener('click',() => go('/register'));
+  dashboardBtn?.addEventListener('click', () => go('/dashboard'));
   logoutBtn?.addEventListener('click', () => {
     if (typeof logoutUser === 'function') logoutUser();
     userModal.classList.add('hidden');

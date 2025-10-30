@@ -1,6 +1,6 @@
 // === URL du backend (local) ===
 const origin = `${location.protocol}//${location.hostname}${location.port ? ':' + location.port : ''}`;
-export const urlBackend = `${origin}/myeasyevent-back/`;
+export const urlBackend = "https://myeasyevent.be/myeasyevent-back/";
 
 
 // ======================
@@ -109,7 +109,7 @@ function checkSession() {
     }
 }
 function checkSessionStatus(callback) {
-    fetch(urlBackend + "api/connexions.php", {
+    fetch(urlBackend + "API/connexions.php", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
