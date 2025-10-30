@@ -1,5 +1,5 @@
 // asset/script/core.js
-import { routes, initRouter } from './router.js';
+import { routes, stripBase, initRouter } from './router.js';
 
 let _currentModule = null;
 
@@ -106,18 +106,14 @@ export async function renderMain(templateName = 'accueil', pageTitle = '') {
 
 // -------------------- ROUTING ------------------
 export function renderRoute(pathname) {
-  // Nettoyage du pathname (supprime / en fin de chaîne, sauf pour "/")
-  const cleanPath = pathname !== '/' ? pathname.replace(/\/$/, '') : pathname;
-
-  // Trouve la route correspondante
-  const route = routes[cleanPath] || routes['/'];
-
-  // Log utile pour débogage
+  let cleanPath = stripBase(pathname);
+  if (cleanPath !== '/' && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
+  const route = routes[cleanPath] || routes['/404'] || routes['/'];
   console.log(`[renderRoute] path="${pathname}" → template="${route.template}"`);
-
-  // Affiche la page correspondante
   return renderMain(route.template, route.title);
 }
+
+
 
 
 export async function displayCore() {
