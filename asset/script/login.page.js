@@ -27,7 +27,6 @@ export function init() {
     }
 
     try {
-      // 🔎 contrôle visuel
       console.log('[login] POST ->', `${lib.urlBackend}API/connexions.php`);
 
       const res = await fetch(`${lib.urlBackend}API/connexions.php`, {
@@ -40,41 +39,45 @@ export function init() {
         }),
       });
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data) throw new Error("Erreur réseau");
+      // Parsing robuste (si le back renvoie HTML d’erreur, on le voit)
+      const raw = await res.text();
+      let data = null;
+      try { data = JSON.parse(raw); } catch { data = null; }
+
+      if (!res.ok || !data) {
+        console.error('[login] Réponse non-JSON ou HTTP !OK:', { status: res.status, raw });
+        throw new Error("Erreur réseau");
+      }
 
       if (data.status === 'success') {
-  const session = data?.data?.session || data?.data?.tokenSession || null;
+        const session = data?.data?.session || data?.data?.tokenSession || null;
 
-  if (session) {
-    lib.setCookie('session', session, 604800);
-    lib.SuccessToast.fire({ title: "Connecté !" });
-    navigate('/dashboard');
-    return;
-  }
+        if (session) {
+          lib.setCookie('session', session, 604800);
+          lib.SuccessToast.fire({ title: "Connecté !" });
+          lib.appNavigate('/dashboard');
+          return;
+        }
 
-  // Succès SANS session → on attend la confirmation du device via SSE
-  const deviceToken =
-    data?.data?.token
-    || data?.data?.deviceToken
-    || localStorage.getItem('MYEASYEVENT_Token'); // fallback si déjà stocké
+        // Succès SANS session → confirmation device (SSE)
+        const deviceToken =
+          data?.data?.token ||
+          data?.data?.deviceToken ||
+          localStorage.getItem('MYEASYEVENT_Token');
 
-  if (deviceToken) {
-    lib.SuccessToast.fire({
-      title: data.message || "Un e-mail de confirmation a été envoyé",
-      text: "Une fois confirmé, cette page se mettra à jour automatiquement.",
-    });
-    await waitingForConfirmDevice(deviceToken);
-    return;
-  }
+        if (deviceToken) {
+          lib.SuccessToast.fire({
+            title: data.message || "Un e-mail de confirmation a été envoyé",
+            text: "Une fois confirmé, cette page se mettra à jour automatiquement.",
+          });
+          await waitingForConfirmDevice(deviceToken);
+          return;
+        }
 
-  // Pas de session ni de token : on informe simplement
-  lib.SuccessToast.fire({
-    title: data.message || "Confirme ton appareil via l’e-mail reçu",
-  });
-  return;
-}
-
+        // Pas de session ni de token : on informe
+        lib.SuccessToast.fire({ title: data.message || "Confirme ton appareil via l’e-mail reçu" });
+        return;
+      }
 
       lib.ErrorToast.fire({ title: data.message || "Identifiants incorrects" });
     } catch (err) {
@@ -85,12 +88,12 @@ export function init() {
   form.addEventListener('submit', onSubmit);
   btnConnect.addEventListener('click', (e) => { e.preventDefault(); onSubmit(e); });
 }
+
 // --- Attente de confirmation du device (SSE) ---
 let _deviceSSE = null;
 
 async function waitingForConfirmDevice(token) {
-  // Sélectionne les éléments existants du formulaire
-  const form   = document.getElementById('loginForm');
+  const form    = document.getElementById('loginForm');
   const emailEl = document.getElementById('email');
   const passEl  = document.getElementById('password');
   const btn     = document.getElementById('btnConnect');
@@ -101,18 +104,16 @@ async function waitingForConfirmDevice(token) {
   if (passEl)  passEl.disabled  = true;
   if (btn)     btn.disabled     = true;
 
-  // 2) Charger le contenu d’attente (ton composant HTML)
+  // 2) Charger un contenu d’attente si dispo
   try {
     const res = await fetch('components/loginEmailCheck.html', { cache: 'no-store' });
     if (res.ok) {
       const content = await res.text();
       if (form) form.innerHTML = content;
     }
-  } catch {
-    // si le partial n'est pas dispo, on reste silencieux
-  }
+  } catch {}
 
-  // 3) Ajouter un petit loader si besoin
+  // 3) Petit loader
   if (form) {
     const loader = document.createElement('div');
     loader.className = 'flex justify-center mt-6';
@@ -127,43 +128,30 @@ async function waitingForConfirmDevice(token) {
     form.appendChild(loader);
   }
 
-  // 4) SSE pour écouter la validation du device
+  // 4) SSE
   if (!('EventSource' in window)) {
     lib.ErrorToast.fire({ title: "Votre navigateur ne supporte pas la mise à jour en temps réel." });
     return;
   }
 
-  // sauvegarde locale du token si tu veux le réutiliser
   try { localStorage.setItem('MYEASYEVENT_Token', token); } catch {}
 
-  // CHANGEMENT: endpoint SSE correct
   const url = `${lib.urlBackend}SSE/deviceValidate.php?token=${encodeURIComponent(token)}`;
   _deviceSSE = new EventSource(url);
 
-  // L’API envoie un event nommé "validatedevice"
   _deviceSSE.addEventListener('validatedevice', (event) => {
-    const value = (event.data || '').trim(); // contient validateDate ou vide si non validé
+    const value = (event.data || '').trim();
 
     try { _deviceSSE.close(); } catch {}
     _deviceSSE = null;
 
     if (value) {
-      // Validé -> redirection
-      navigate('/myeasyevent-front/');
       lib.SuccessToast.fire({ title: "Appareil confirmé" });
+      lib.appNavigate('/accueil'); // ✅ route correcte (minuscule)
     } else {
-      // Pas encore validé -> on relance une écoute après un court délai
       setTimeout(() => waitingForConfirmDevice(token), 1500);
     }
   });
-
-  // (optionnel) logs/gestion erreurs
-  _deviceSSE.onerror = () => {
-    // Tu peux relancer après un délai si tu veux être tolérant:
-    // try { _deviceSSE.close(); } catch {}
-    // _deviceSSE = null;
-    // setTimeout(() => waitingForConfirmDevice(token), 2000);
-  };
 }
 
 // Nettoyage si on quitte la page login

@@ -19,23 +19,39 @@ export const routes = {
   '/':                 { template: 'accueil',          title: 'Accueil - My Easy Event' },
 };
 
-// Supprime le prefixe /myeasyevent-front en local
+// Supprime le préfixe /myeasyevent-front en local
 export function stripBase(path) {
   return APP_BASE && path.startsWith(APP_BASE)
     ? path.slice(APP_BASE.length) || '/'
-    : path;
+    : path || '/';
 }
 
-// Ajoute le prefixe en local
+// Ajoute le préfixe en local
 export function withBase(path) {
-  return `${APP_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+  const rel = path.startsWith('/') ? path : `/${path}`;
+  return `${APP_BASE}${rel}`;
+}
+
+// Normalise n'importe quel chemin vers un chemin "app" (sans base)
+export function toAppPath(path) {
+  let p = path || '/';
+  try {
+    if (/^https?:\/\//i.test(p)) p = new URL(p).pathname;
+  } catch {}
+  if (!p.startsWith('/')) p = '/' + p;
+
+  if (APP_BASE && p.startsWith(APP_BASE)) {
+    p = p.slice(APP_BASE.length) || '/';
+    if (!p.startsWith('/')) p = '/' + p;
+  }
+  return p;
 }
 
 export function initRouter({ onRouteChange, skipInitial = true } = {}) {
-  // Permet la navigation via JS : navigate('/login')
+  // Navigation SPA (idempotente grâce à toAppPath)
   window.navigate = (to) => {
-    const rel = to.startsWith('/') ? to : `/${to}`;
-    const target = withBase(rel);
+    const rel = toAppPath(to);         // ← normalisation
+    const target = withBase(rel);      // ajoute la base si local
     if (location.pathname === target) return;
     history.pushState({}, '', target);
     onRouteChange?.(target);
@@ -52,7 +68,7 @@ export function initRouter({ onRouteChange, skipInitial = true } = {}) {
     if (url.origin !== location.origin) return; // lien externe
 
     e.preventDefault();
-    const appRel = stripBase(url.pathname);
+    const appRel = toAppPath(url.pathname);
     window.navigate(appRel);
   });
 

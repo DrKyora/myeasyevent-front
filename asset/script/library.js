@@ -1,6 +1,24 @@
-// === URL du backend (local) ===
-const origin = `${location.protocol}//${location.hostname}${location.port ? ':' + location.port : ''}`;
-export const urlBackend = "https://myeasyevent.be/myeasyevent-back/";
+// asset/script/library.js
+
+// === URL du backend (local / prod) ===
+let _urlBackend = '';
+
+switch (true) {
+  // Local (toutes variantes)
+  case window.location.hostname === 'localhost':
+  case window.location.hostname === '127.0.0.1':
+  case window.location.hostname === '::1':
+  case window.location.hostname === '[::1]':
+    _urlBackend = 'https://localhost/myeasyevent-back/';
+    break;
+
+  // Production
+  default:
+    _urlBackend = 'https://myeasyevent.be/myeasyevent-back/';
+    break;
+}
+
+export const urlBackend = _urlBackend;
 
 
 // ======================
@@ -76,64 +94,80 @@ export const ErrorToast = Swal.mixin({
 
 // --------------- Sessions and Login ------------
 function checkSession() {
-    if (
-        (session =
-            getCookie("MYEASYEVENT_Session") && localStorage.getItem("MYEASYEVENT_Token"))
-    ) {
-        checkSessionStatus((reponse) => {
-            if (!reponse) {
-                window.location.replace("login.html");
-            } else {
-                if (
-                    sessionStorage.getItem("avatar") === null ||
-                    sessionStorage.getItem("avatar") === "null" ||
-                    sessionStorage.getItem("avatar") === "undefined"
-                ) {
-                    sessionStorage.setItem("avatar", reponse.avatar);
-                }
-                if (
-                    sessionStorage.getItem("avatar") !== null &&
-                    sessionStorage.getItem("avatar") !== "null" &&
-                    sessionStorage.getItem("avatar") !== "undefined"
-                ) {
-                    let avatar = document.getElementById("navbarAvatar");
-                    avatar.src =
-                        urlBackend +
-                        "img/avatars/" +
-                        sessionStorage.getItem("avatar");
-                }
-            }
-        });
-    } else {
+  if (
+    (session =
+      getCookie("MYEASYEVENT_Session") && localStorage.getItem("MYEASYEVENT_Token"))
+  ) {
+    checkSessionStatus((reponse) => {
+      if (!reponse) {
         window.location.replace("login.html");
-    }
-}
-function checkSessionStatus(callback) {
-    fetch(urlBackend + "API/connexions.php", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-            action: "checkSession",
-            session: getCookie("MYEASYEVENT_Session"),
-        }),
-    })
-        .then((response) => {
-            return response.json();
-        })
-        .then((response) => {
-            /**Voir pour renvoyer depuis api les infos de préférences user pour l'affichage ICI */
-            if (response.status == "success") {
-                callback(response.data);
-            } else {
-                callback(false);
-            }
-        });
-}
-function logout() {
-    localStorage.removeItem("MYEASYEVENT_Token");
-    setCookie("MYEASYEVENT_Session", "", -1);
-    /**Supprime toutes les données des session */
-    sessionStorage.clear();
+      } else {
+        if (
+          sessionStorage.getItem("avatar") === null ||
+          sessionStorage.getItem("avatar") === "null" ||
+          sessionStorage.getItem("avatar") === "undefined"
+        ) {
+          sessionStorage.setItem("avatar", reponse.avatar);
+        }
+        if (
+          sessionStorage.getItem("avatar") !== null &&
+          sessionStorage.getItem("avatar") !== "null" &&
+          sessionStorage.getItem("avatar") !== "undefined"
+        ) {
+          let avatar = document.getElementById("navbarAvatar");
+          avatar.src =
+            urlBackend +
+            "img/avatars/" +
+            sessionStorage.getItem("avatar");
+        }
+      }
+    });
+  } else {
     window.location.replace("login.html");
+  }
 }
-//#endregion
+
+function checkSessionStatus(callback) {
+  fetch(urlBackend + "API/connexions.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "checkSession",
+      session: getCookie("MYEASYEVENT_Session"),
+    }),
+  })
+    .then((response) => response.json())
+    .then((response) => {
+      if (response.status == "success") {
+        callback(response.data);
+      } else {
+        callback(false);
+      }
+    });
+}
+
+function logout() {
+  localStorage.removeItem("MYEASYEVENT_Token");
+  setCookie("MYEASYEVENT_Session", "", -1);
+  sessionStorage.clear();
+  window.location.replace("login.html");
+}
+
+// --- Navigation universelle (local + prod) avec normalisation
+export function appNavigate(to = '/') {
+  let rel = to || '/';
+  if (!rel.startsWith('/')) rel = '/' + rel;
+  const base = location.pathname.startsWith('/myeasyevent-front') ? '/myeasyevent-front' : '';
+
+  // retire la base si déjà incluse par erreur
+  if (base && rel.startsWith(base + '/')) {
+    rel = rel.slice(base.length) || '/';
+    if (!rel.startsWith('/')) rel = '/' + rel;
+  }
+
+  if (typeof window.navigate === 'function') {
+    window.navigate(rel);   // Le router re-normalise aussi
+  } else {
+    location.assign(base + rel);
+  }
+}
