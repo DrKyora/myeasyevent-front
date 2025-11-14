@@ -1,9 +1,10 @@
 // asset/script/router.js
 
-// Base dynamique : utile pour local ET en ligne
-export const APP_BASE = window.location.pathname.startsWith('/myeasyevent-front')
-  ? '/myeasyevent-front'
-  : '';
+// Détection automatique de l'environnement
+const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[?::1]?)$/i.test(location.hostname);
+
+// Base dynamique : utile pour local ET prod
+export const APP_BASE = IS_LOCAL ? '/myeasyevent-front' : '';
 
 export const routes = {
   '/accueil':          { template: 'accueil',          title: 'Accueil - My Easy Event' },
@@ -21,9 +22,12 @@ export const routes = {
 
 // Supprime le préfixe /myeasyevent-front en local
 export function stripBase(path) {
-  return APP_BASE && path.startsWith(APP_BASE)
-    ? path.slice(APP_BASE.length) || '/'
-    : path || '/';
+  if (!path) return '/';
+  if (APP_BASE && path.startsWith(APP_BASE)) {
+    const stripped = path.slice(APP_BASE.length) || '/';
+    return stripped.startsWith('/') ? stripped : '/' + stripped;
+  }
+  return path;
 }
 
 // Ajoute le préfixe en local
@@ -32,7 +36,7 @@ export function withBase(path) {
   return `${APP_BASE}${rel}`;
 }
 
-// Normalise n'importe quel chemin vers un chemin "app" (sans base)
+// Normalise un chemin (ex: supprime la base si elle est présente)
 export function toAppPath(path) {
   let p = path || '/';
   try {
@@ -48,16 +52,16 @@ export function toAppPath(path) {
 }
 
 export function initRouter({ onRouteChange, skipInitial = true } = {}) {
-  // Navigation SPA (idempotente grâce à toAppPath)
+  // Navigation SPA
   window.navigate = (to) => {
-    const rel = toAppPath(to);         // ← normalisation
-    const target = withBase(rel);      // ajoute la base si local
+    const rel = toAppPath(to);
+    const target = withBase(rel);
     if (location.pathname === target) return;
     history.pushState({}, '', target);
     onRouteChange?.(target);
   };
 
-  // Intercepte les clics sur <a data-spa>
+  // Intercepte les liens <a data-spa>
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a[data-spa]');
     if (!a) return;
@@ -72,7 +76,7 @@ export function initRouter({ onRouteChange, skipInitial = true } = {}) {
     window.navigate(appRel);
   });
 
-  // Gestion du bouton précédent/suivant
+  // Gère le bouton précédent/suivant
   window.addEventListener('popstate', () => {
     onRouteChange?.(location.pathname);
   });
