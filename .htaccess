@@ -1,13 +1,52 @@
 # /www/myeasyevent-front/.htaccess
 
+# ===============================================
+#  MyEasyEvent FRONT SPA CONFIG (Apache)
+# ===============================================
+
+# 1) Forcer l'index si VirtualHost ne le définit pas
+DirectoryIndex index.html
+
+# 2) Empêcher listing, conserver MultiViews off (peut générer des 403 si index absent)
 AddDefaultCharset UTF-8
 Options -Indexes -MultiViews
-RewriteEngine On
 
-# 1. Si le fichier/dossier existe (JS, CSS, images, etc.) -> on le sert
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
+# 3) S'assurer que l'accès est autorisé (Apache 2.4+). Si un répertoire parent
+#    impose une restriction, ceci la contourne pour ce dossier.
+<IfModule mod_authz_core.c>
+	Require all granted
+</IfModule>
 
-# 2. Sinon -> on renvoie toujours index.html (routing SPA)
-RewriteRule ^ index.html [L]
+# 4) Réécriture SPA
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteBase /
+
+	# Fichiers/dossiers existants -> servir normalement
+	RewriteCond %{REQUEST_FILENAME} -f [OR]
+	RewriteCond %{REQUEST_FILENAME} -d
+	RewriteRule ^ - [L]
+
+	# Tout le reste -> index.html
+	RewriteRule ^ index.html [QSA,L]
+</IfModule>
+
+# 5) Sécurité minimale
+<IfModule mod_headers.c>
+	Header always set X-Content-Type-Options nosniff
+	Header always set X-Frame-Options SAMEORIGIN
+	Header always set Referrer-Policy no-referrer-when-downgrade
+</IfModule>
+
+# 6) Diagnostics : décommenter provisoirement pour voir erreurs de réécriture
+# RewriteLogLevel 3 (Apache 2.2 uniquement)
+# LogLevel alert rewrite:trace3
+
+# ===============================================
+#  Notes de debug si 403 persistant :
+#  - Vérifier que AllowOverride All est défini dans le VirtualHost parent.
+#  - Vérifier owner/permissions : dossiers 755, fichiers 644.
+#  - Vérifier que le DocumentRoot pointe sur CE dossier (et pas un parent).
+#  - Tester accès direct: https://myeasyevent/index.html (si 403 aussi -> permission ou vhost incorrect).
+#  - Créer un fichier test.txt et accéder à https://myeasyevent/test.txt.
+# ===============================================
