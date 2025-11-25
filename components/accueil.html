@@ -1,10 +1,112 @@
 <template id="accueil">
-    <main>
-        <section>
+    <main class="bg-gray-100 min-h-screen">
+        <!-- Section Hero avec Carousel -->
+        <section class="relative px-6 py-20 min-h-[60vh] overflow-hidden flex items-center justify-center">
+            <!-- Carousel Container -->
+            <div id="carousel" class="relative max-w-6xl mx-auto">
+                <!-- Slide 1 - Étudiants Soirées -->
+                <div class="carousel-slide active flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="flex-1 text-center md:text-left">
+                        <h2 class="mb-4">
+                            Soirées Étudiantes
+                        </h2>
+                        <p class="text-gray-600 text-lg mb-6 max-w-xl">
+                            Découvrez les meilleures soirées et événements pour étudiants. 
+                            Des week-ends inoubliables vous attendent !
+                        </p>
+                        <button data-filter="soirees étudiantes" class="event-filter-btn bg-orange-400 hover:bg-orange-500 text-gray-800 font-medium px-8 py-3 rounded-lg transition-colors inline-flex items-center gap-2">
+                            Voir les soirées étudiantes
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 flex justify-center">
+                        <div class="w-64 h-64 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center shadow-lg">
+                            <svg class="w-32 h-32 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Slide 2 - TCG & Jeux de plateau -->
+                <div class="carousel-slide flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="flex-1 text-center md:text-left">
+                        <h2 class="text-5xl md:text-6xl font-serif italic text-slate-700 mb-4">
+                            TCG & Jeux de Plateau
+                        </h2>
+                        <p class="text-gray-600 text-lg mb-6 max-w-xl">
+                            Tournois de cartes, soirées jeux de société et événements gaming. 
+                            Rejoignez la communauté !
+                        </p>
+                        <button data-filter="jeuxplateau TCG" class="event-filter-btn bg-orange-400 hover:bg-orange-500 text-gray-800 font-medium px-8 py-3 rounded-lg transition-colors inline-flex items-center gap-2">
+                            Voir les événements jeux de plateau et TCG
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 flex justify-center">
+                        <div class="w-64 h-64 bg-gradient-to-br from-blue-400 to-green-400 rounded-full flex items-center justify-center shadow-lg">
+                            <svg class="w-32 h-32 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Navigation Arrows -->
+            <button id="prevSlide" class="absolute left-4 top-1/2 -translate-y-1/2 bg-blue-dianne-500  hover:bg-white p-3 rounded-full shadow-lg transition-all">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <button id="nextSlide" class="absolute right-4 top-1/2 -translate-y-1/2 bg-blue-dianne-500 hover:bg-white p-3 rounded-full shadow-lg transition-all">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+            <!-- Navigation Dots -->
+            <div class="flex absolute top-4/5 left-1/2 -translate-x-1/2 justify-center  gap-3 mb-8">
+                <button class="carousel-dot active w-3 h-3 rounded-full transition-all hover:bg-gray-400 cursor-pointer" data-slide="0"></button>
+                <button class="carousel-dot w-3 h-3 rounded-full bg-gray-300 hover:bg-gray-400 transition-all cursor-pointer" data-slide="1"></button>
+            </div>
         </section>
-        <section>
+
+        <!-- Section Features -->
+        <section class="px-6 py-16 max-w-6xl mx-auto">
+            <h2 class="text-4xl md:text-5xl font-serif text-slate-700 text-center mb-6">
+                Créez des événements<br>
+                <span class="font-bold">uniques en quelques clics</span>
+            </h2>
             
+            <p class="text-gray-700 text-center max-w-3xl mx-auto mb-12 leading-relaxed">
+                My Easy Event vous permet de créer facilement des événements personnalisés à partir de templates professionnels. Plus besoin d'être un expert en design, nous nous occupons de tout pour que vous puissiez vous concentrer sur l'essentiel.
+            </p>
+
+            <!-- Cards -->
+            <div class="grid md:grid-cols-2 gap-6 mt-12">
+                <!-- Card Simple -->
+                <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                    <h3 class="text-2xl font-serif font-semibold text-slate-700 mb-4">
+                        Simple
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Interface intuitive et templates prêts à l'emploi pour une création rapide
+                    </p>
+                </div>
+
+                <!-- Card Personnalisable -->
+                <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                    <h3 class="text-2xl font-serif font-semibold text-slate-700 mb-4">
+                        Personnalisable
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Adaptez chaque template à votre image et à vos besoins
+                    </p>
+                </div>
+            </div>
         </section>
     </main>
 </template>

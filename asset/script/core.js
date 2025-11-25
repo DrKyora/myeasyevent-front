@@ -10,11 +10,52 @@ function go(to = '/') {
   const rel = to.startsWith('/') ? to : `/${to}`;
   const base = location.pathname.startsWith('/myeasyevent-front') ? '/myeasyevent-front' : '';
   const target = `${base}${rel}`;
+  
+  // Fermer le menu burger lors de la navigation
+  const mainNav = document.getElementById('mainNav');
+  if (mainNav && !mainNav.classList.contains('hidden')) {
+    mainNav.classList.add('hidden');
+  }
+  
   if (typeof window.navigate === 'function') {
     window.navigate(rel); // SPA
   } else {
     location.assign(target); // fallback
   }
+}
+
+/* ---------------------------------------
+   Fonction d'initialisation du burger menu
+---------------------------------------- */
+function initializeBurgerMenu() {
+  const burgerBtn = document.getElementById('burgerBtn');
+  const mainNav = document.getElementById('mainNav');
+  
+  if (!burgerBtn || !mainNav) return;
+  
+  burgerBtn.addEventListener('click', () => {
+    mainNav.classList.toggle('hidden');
+  });
+  
+  // Fermer le menu si clic en dehors (mobile)
+  document.addEventListener('click', (e) => {
+    if (!mainNav.classList.contains('hidden') && 
+        !mainNav.contains(e.target) && 
+        e.target !== burgerBtn && 
+        !burgerBtn.contains(e.target)) {
+      mainNav.classList.add('hidden');
+    }
+  });
+  
+  // Fermer le menu lors du clic sur un lien de navigation
+  const navLinks = mainNav.querySelectorAll('a[data-spa]');
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      mainNav.classList.add('hidden');
+    });
+  });
+  
+  console.log('[core] burger menu initialisé');
 }
 
 /* ---------------------------------------
@@ -65,7 +106,7 @@ function initializeUserModal() {
   // Actions
   if (loginBtn) {
     loginBtn.addEventListener('click', () => {
-      go('/login');     // ← au lieu de navigate(...)
+      go('/login');
       userModal.classList.add('hidden');
     });
   }
@@ -92,6 +133,8 @@ function initializeUserModal() {
       userModal.classList.add('hidden');
     });
   }
+  
+  console.log('[core] modal utilisateur initialisée');
 }
 
 // Export explicite demandé
@@ -172,7 +215,10 @@ export async function renderMain(templateName = 'accueil', pageTitle = '') {
    Routing
 ---------------------------------------- */
 export function renderRoute(pathname) {
-  let cleanPath = stripBase(pathname);
+  // Séparer le pathname des query params
+  const [pathOnly] = pathname.split('?');
+  
+  let cleanPath = stripBase(pathOnly);
   if (cleanPath !== '/' && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
   const route = routes[cleanPath] || routes['/404'] || routes['/'];
   console.log(`[renderRoute] path="${pathname}" → template="${route.template}"`);
@@ -194,13 +240,13 @@ export async function renderHeader() {
   }
   if (!document.querySelector('header')) document.body.prepend(wrap);
 
-  // ✅ initialiser la modal juste après insertion du header
+  // ✅ initialiser le burger menu et la modal après insertion du header
   setTimeout(() => {
     try {
+      initializeBurgerMenu();
       initializeUserModal();
-      console.log('[core] modal utilisateur initialisée');
     } catch (e) {
-      console.warn('[core] erreur init modal user', e);
+      console.warn('[core] erreur init header', e);
     }
   }, 0);
 }
@@ -219,14 +265,14 @@ export async function renderFooter() {
   document.body.appendChild(footer);
   // Mettre à jour l'année courante
   const yearSpan = document.querySelector('#currentYear');
-  yearSpan.textContent = new Date().getFullYear();
+  if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 }
 
 /* ---------------------------------------
    Boot
 ---------------------------------------- */
 export async function displayCore() {
-  await renderHeader();      // header + init modal
+  await renderHeader();      // header + init burger + modal
   await renderFooter();
 
   renderRoute(location.pathname);

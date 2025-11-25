@@ -44,4 +44,23 @@
     a {
         color: var(--color-aqua-haze-500);
     }
+
+    .carousel-slide {
+        display: none !important;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+    
+    .carousel-slide.active {
+        display: flex !important;
+        opacity: 1;
+    }
+    
+    .carousel-dot {
+        background-color: rgb(209 213 219); /* gray-300 */
+    }
+    
+    .carousel-dot.active {
+        background-color: rgb(251 146 60) !important; /* orange-400 */
+    }
 }
