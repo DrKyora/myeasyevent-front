@@ -72,6 +72,7 @@ function initializeUserModal() {
   const dashboardBtn = document.getElementById('dashboardBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const arrowIcon = document.getElementById('arrow');
+  const closedModal = document.getElementById('closedModal');
 
   if (!userModal || !userModalBtn) return;
 
@@ -93,6 +94,11 @@ function initializeUserModal() {
   userModalBtn.addEventListener('click', () => {
     userModal.classList.toggle('hidden');
     arrowIcon.classList.toggle('rotate-180');
+  });
+
+  closedModal.addEventListener('click', () => {
+    userModal.classList.add('hidden');
+    arrowIcon.classList.remove('rotate-180');
   });
 
   // Fermer la modal si clic en dehors
