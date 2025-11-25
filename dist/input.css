@@ -45,6 +45,12 @@
         color: var(--color-aqua-haze-500);
     }
 
+    button:hover{
+    cursor: pointer;
+    font-weight: 400; /* Garde le poids normal */
+    text-shadow: 0 0 1px currentColor;
+    }
+
     .carousel-slide {
         display: none !important;
         opacity: 0;

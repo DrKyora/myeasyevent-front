@@ -10,8 +10,6 @@
       "Courier New", monospace;
     --color-red-500: oklch(0.637 0.237 25.331);
     --color-red-600: oklch(0.577 0.245 27.325);
-    --color-orange-400: oklch(0.75 0.183 55.934);
-    --color-orange-500: oklch(0.705 0.213 47.604);
     --color-green-400: oklch(0.792 0.209 151.711);
     --color-blue-400: oklch(0.707 0.165 254.624);
     --color-purple-400: oklch(0.714 0.203 305.504);
@@ -24,6 +22,7 @@
     --color-gray-600: oklch(0.446 0.03 256.802);
     --color-gray-700: oklch(0.373 0.034 259.733);
     --color-gray-800: oklch(0.278 0.033 256.848);
+    --color-black: #000;
     --color-white: #fff;
     --spacing: 0.25rem;
     --container-xs: 20rem;
@@ -51,11 +50,12 @@
     --text-5xl--line-height: 1;
     --text-6xl: 3.75rem;
     --text-6xl--line-height: 1;
-    --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
     --leading-relaxed: 1.625;
     --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
     --ease-in: cubic-bezier(0.4, 0, 1, 1);
     --ease-out: cubic-bezier(0, 0, 0.2, 1);
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
@@ -278,6 +278,9 @@
   .sticky {
     position: sticky;
   }
+  .inset-0 {
+    inset: calc(var(--spacing) * 0);
+  }
   .top-1 {
     top: calc(var(--spacing) * 1);
   }
@@ -286,12 +289,6 @@
   }
   .top-2 {
     top: calc(var(--spacing) * 2);
-  }
-  .top-3 {
-    top: calc(var(--spacing) * 3);
-  }
-  .top-3\/4 {
-    top: calc(3/4 * 100%);
   }
   .top-4 {
     top: calc(var(--spacing) * 4);
@@ -302,8 +299,8 @@
   .top-9 {
     top: calc(var(--spacing) * 9);
   }
-  .top-full {
-    top: 100%;
+  .top-50 {
+    top: calc(var(--spacing) * 50);
   }
   .right-1 {
     right: calc(var(--spacing) * 1);
@@ -317,14 +314,17 @@
   .bottom-0 {
     bottom: calc(var(--spacing) * 0);
   }
+  .bottom-2 {
+    bottom: calc(var(--spacing) * 2);
+  }
   .bottom-4 {
     bottom: calc(var(--spacing) * 4);
   }
-  .bottom-8 {
-    bottom: calc(var(--spacing) * 8);
+  .bottom-10 {
+    bottom: calc(var(--spacing) * 10);
   }
-  .bottom-full {
-    bottom: 100%;
+  .left-0 {
+    left: calc(var(--spacing) * 0);
   }
   .left-1 {
     left: calc(var(--spacing) * 1);
@@ -332,20 +332,26 @@
   .left-1\/2 {
     left: calc(1/2 * 100%);
   }
-  .left-3 {
-    left: calc(var(--spacing) * 3);
-  }
-  .left-3\/4 {
-    left: calc(3/4 * 100%);
-  }
   .left-4 {
     left: calc(var(--spacing) * 4);
+  }
+  .left-10 {
+    left: calc(var(--spacing) * 10);
+  }
+  .left-20 {
+    left: calc(var(--spacing) * 20);
+  }
+  .left-50 {
+    left: calc(var(--spacing) * 50);
   }
   .isolate {
     isolation: isolate;
   }
   .isolation-auto {
     isolation: auto;
+  }
+  .-z-10 {
+    z-index: calc(10 * -1);
   }
   .z-10 {
     z-index: 10;
@@ -620,6 +626,9 @@
   .h-64 {
     height: calc(var(--spacing) * 64);
   }
+  .h-\[60vh\] {
+    height: 60vh;
+  }
   .h-full {
     height: 100%;
   }
@@ -634,12 +643,6 @@
   }
   .min-h-\[60vh\] {
     min-height: 60vh;
-  }
-  .min-h-\[65vh\] {
-    min-height: 65vh;
-  }
-  .min-h-\[80vh\] {
-    min-height: 80vh;
   }
   .min-h-screen {
     min-height: 100vh;
@@ -688,6 +691,9 @@
   }
   .max-w-80 {
     max-width: calc(var(--spacing) * 80);
+  }
+  .max-w-full {
+    max-width: 100%;
   }
   .max-w-none {
     max-width: none;
@@ -1246,11 +1252,17 @@
   .rounded {
     border-radius: 0.25rem;
   }
+  .rounded-2xl {
+    border-radius: var(--radius-2xl);
+  }
   .rounded-full {
     border-radius: calc(infinity * 1px);
   }
   .rounded-lg {
     border-radius: var(--radius-lg);
+  }
+  .rounded-xl {
+    border-radius: var(--radius-xl);
   }
   .rounded-s {
     border-start-start-radius: 0.25rem;
@@ -1395,6 +1407,21 @@
   .bg-aqua-haze-500 {
     background-color: var(--color-aqua-haze-500);
   }
+  .bg-black {
+    background-color: var(--color-black);
+  }
+  .bg-black\/40 {
+    background-color: color-mix(in oklab, var(--color-black) 40%, transparent);
+  }
+  .bg-black\/50 {
+    background-color: color-mix(in oklab, var(--color-black) 50%, transparent);
+  }
+  .bg-black\/60 {
+    background-color: color-mix(in oklab, var(--color-black) 60%, transparent);
+  }
+  .bg-black\/70 {
+    background-color: color-mix(in oklab, var(--color-black) 70%, transparent);
+  }
   .bg-blue-dianne-500 {
     background-color: var(--color-blue-dianne-500);
   }
@@ -1406,9 +1433,6 @@
   }
   .bg-gray-300 {
     background-color: var(--color-gray-300);
-  }
-  .bg-orange-400 {
-    background-color: var(--color-orange-400);
   }
   .bg-red-500 {
     background-color: var(--color-red-500);
@@ -1425,8 +1449,11 @@
   .bg-white {
     background-color: var(--color-white);
   }
-  .bg-white\/80 {
-    background-color: color-mix(in oklab, var(--color-white) 80%, transparent);
+  .bg-white\/50 {
+    background-color: color-mix(in oklab, var(--color-white) 50%, transparent);
+  }
+  .bg-white\/70 {
+    background-color: color-mix(in oklab, var(--color-white) 70%, transparent);
   }
   .-bg-conic {
     --tw-gradient-position: in oklab;
@@ -1641,6 +1668,15 @@
   .px-8 {
     padding-inline: calc(var(--spacing) * 8);
   }
+  .px-15 {
+    padding-inline: calc(var(--spacing) * 15);
+  }
+  .px-16 {
+    padding-inline: calc(var(--spacing) * 16);
+  }
+  .px-18 {
+    padding-inline: calc(var(--spacing) * 18);
+  }
   .py-2 {
     padding-block: calc(var(--spacing) * 2);
   }
@@ -1652,6 +1688,9 @@
   }
   .py-16 {
     padding-block: calc(var(--spacing) * 16);
+  }
+  .py-18 {
+    padding-block: calc(var(--spacing) * 18);
   }
   .py-20 {
     padding-block: calc(var(--spacing) * 20);
@@ -1756,10 +1795,6 @@
   .font-bold {
     --tw-font-weight: var(--font-weight-bold);
     font-weight: var(--font-weight-bold);
-  }
-  .font-medium {
-    --tw-font-weight: var(--font-weight-medium);
-    font-weight: var(--font-weight-medium);
   }
   .font-semibold {
     --tw-font-weight: var(--font-weight-semibold);
@@ -2319,13 +2354,6 @@
       }
     }
   }
-  .hover\:bg-orange-500 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: var(--color-orange-500);
-      }
-    }
-  }
   .hover\:bg-red-600 {
     &:hover {
       @media (hover: hover) {
@@ -2620,6 +2648,11 @@
   }
   a {
     color: var(--color-aqua-haze-500);
+  }
+  button:hover {
+    cursor: pointer;
+    font-weight: 400;
+    text-shadow: 0 0 1px currentColor;
   }
   .carousel-slide {
     display: none !important;
