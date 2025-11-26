@@ -220,7 +220,7 @@ export async function renderMain(templateName = 'accueil', pageTitle = '') {
 /* ---------------------------------------
    Routing
 ---------------------------------------- */
-export function renderRoute(pathname) {
+export async function renderRoute(pathname) {
   // Séparer le pathname des query params
   const [pathOnly] = pathname.split('?');
   
@@ -228,6 +228,16 @@ export function renderRoute(pathname) {
   if (cleanPath !== '/' && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
   const route = routes[cleanPath] || routes['/404'] || routes['/'];
   console.log(`[renderRoute] path="${pathname}" → template="${route.template}"`);
+  
+  // Animation de sortie
+  const oldMain = document.querySelector('main');
+  if (oldMain) {
+    oldMain.classList.add('fade-out');
+    await new Promise(resolve => setTimeout(resolve, 200)); // Attendre la fin de l'animation
+  }
+  
+  window.scrollTo(0, 0);
+  
   return renderMain(route.template, route.title);
 }
 
