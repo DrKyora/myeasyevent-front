@@ -1,5 +1,6 @@
 // asset/script/core.js
 import { initRouter, routes, stripBase } from './router.js';
+import * as lib from './library.js';
 
 let _currentModule = null;
 
@@ -22,6 +23,15 @@ function go(to = '/') {
   } else {
     location.assign(target); // fallback
   }
+}
+
+/* ---------------------------------------
+   Vérifier si l'utilisateur a des tokens
+---------------------------------------- */
+function hasAuthTokens() {
+  const session = lib.getCookie('MYEASYEVENT_Session');
+  const deviceToken = localStorage.getItem('MYEASYEVENT_Token');
+  return !!(session || deviceToken);
 }
 
 /* ---------------------------------------
@@ -59,57 +69,90 @@ function initializeBurgerMenu() {
 }
 
 /* ---------------------------------------
+   Mise à jour de l'affichage du header selon l'état de connexion
+---------------------------------------- */
+function updateHeaderAuth(isLoggedIn) {
+  // Éléments mobile
+  const navRegister = document.getElementById('navRegister');
+  const navLogin = document.getElementById('navLogin');
+  const navDashboard = document.getElementById('navDashboard');
+  const navLogout = document.getElementById('navLogout');
+  
+  // Éléments desktop (modal)
+  const userModalBtn = document.getElementById('userModalBtn');
+  const notConnectedContent = document.getElementById('notConnectedContent');
+  const connectedContent = document.getElementById('connectedContent');
+  
+  if (isLoggedIn) {
+    // CONNECTÉ
+    // Mobile : masquer inscription/connexion, afficher dashboard/déconnexion
+    navRegister?.classList.add('hidden');
+    navLogin?.classList.add('hidden');
+    navDashboard?.classList.remove('hidden');
+    navLogout?.classList.remove('hidden');
+    
+    // Desktop : afficher contenu connecté dans la modal
+    notConnectedContent?.classList.add('hidden');
+    connectedContent?.classList.remove('hidden');
+    userModalBtn?.classList.remove('hidden');
+  } else {
+    // NON CONNECTÉ
+    // Mobile : afficher inscription/connexion, masquer dashboard/déconnexion
+    navRegister?.classList.remove('hidden');
+    navLogin?.classList.remove('hidden');
+    navDashboard?.classList.add('hidden');
+    navLogout?.classList.add('hidden');
+    
+    // Desktop : afficher contenu non connecté dans la modal
+    notConnectedContent?.classList.remove('hidden');
+    connectedContent?.classList.add('hidden');
+    userModalBtn?.classList.remove('hidden');
+  }
+  
+  console.log('[core] header mis à jour - connecté:', isLoggedIn);
+}
+
+// Exposer globalement pour library.js
+window.updateHeaderAuth = updateHeaderAuth;
+
+/* ---------------------------------------
    Fonction d'initialisation de la modal
-   (ta version réintégrée, avec navigate -> go)
 ---------------------------------------- */
 function initializeUserModal() {
   const userModal = document.getElementById('userModal');
   const userModalBtn = document.getElementById('userModalBtn');
-  const notConnectedContent = document.getElementById('notConnectedContent');
-  const connectedContent = document.getElementById('connectedContent');
   const loginBtn = document.getElementById('loginBtn');
   const registerBtn = document.getElementById('registerBtn');
   const dashboardBtn = document.getElementById('dashboardBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutBtns = document.querySelectorAll('._logout-btn');
   const arrowIcon = document.getElementById('arrow');
   const closedModal = document.getElementById('closedModal');
 
   if (!userModal || !userModalBtn) return;
 
-  // Vérifier l'état de connexion (simulation pour l'instant)
-  const isLoggedIn = typeof checkUserLoginStatus === 'function'
-    ? checkUserLoginStatus()
-    : false;
-
-  // Afficher le bon contenu selon l'état de connexion
-  if (isLoggedIn) {
-    notConnectedContent?.classList.add('hidden');
-    connectedContent?.classList.remove('hidden');
-  } else {
-    notConnectedContent?.classList.remove('hidden');
-    connectedContent?.classList.add('hidden');
-  }
-
   // Ouvrir / fermer la modal
   userModalBtn.addEventListener('click', () => {
     userModal.classList.toggle('hidden');
-    arrowIcon.classList.toggle('rotate-180');
+    arrowIcon?.classList.toggle('rotate-180');
   });
 
-  closedModal.addEventListener('click', () => {
+  closedModal?.addEventListener('click', () => {
     userModal.classList.add('hidden');
-    arrowIcon.classList.remove('rotate-180');
+    arrowIcon?.classList.remove('rotate-180');
   });
 
   // Fermer la modal si clic en dehors
   document.addEventListener('mousedown', (e) => {
-    if (!userModal.classList.contains('hidden') && !userModal.contains(e.target) && e.target !== userModalBtn) {
+    if (!userModal.classList.contains('hidden') && 
+        !userModal.contains(e.target) && 
+        e.target !== userModalBtn &&
+        !userModalBtn.contains(e.target)) {
       userModal.classList.add('hidden');
       arrowIcon?.classList.remove('rotate-180');
     }
   });
 
-  // Actions
+  // Actions - Non connecté
   if (loginBtn) {
     loginBtn.addEventListener('click', () => {
       go('/login');
@@ -124,6 +167,7 @@ function initializeUserModal() {
     });
   }
 
+  // Actions - Connecté
   if (dashboardBtn) {
     dashboardBtn.addEventListener('click', () => {
       go('/dashboard');
@@ -131,14 +175,13 @@ function initializeUserModal() {
     });
   }
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      if (typeof logoutUser === 'function') {
-        logoutUser();
-      }
+  // Déconnexion (tous les boutons)
+  logoutBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      lib.logout();
       userModal.classList.add('hidden');
     });
-  }
+  });
   
   console.log('[core] modal utilisateur initialisée');
 }
@@ -149,10 +192,53 @@ export function initUserModal() {
 }
 
 /* ---------------------------------------
-   Rendu principal
+   Vérification de l'authentification
+---------------------------------------- */
+async function checkAuthentication() {
+  try {
+    const user = await lib.checkUserLoginStatus();
+    updateHeaderAuth(!!user);
+    return !!user;
+  } catch (err) {
+    console.error('[core] Erreur vérification auth:', err);
+    updateHeaderAuth(false);
+    return false;
+  }
+}
+
+/* ---------------------------------------
+   Rendu principal avec protection de routes
 ---------------------------------------- */
 export async function renderMain(templateName = 'accueil', pageTitle = '') {
   const name = String(templateName || '').trim();
+
+  // Routes protégées
+  const protectedRoutes = ['dashboard'];
+  
+  // Si c'est une route protégée, vérifier l'authentification
+  if (protectedRoutes.includes(name)) {
+    const isLoggedIn = hasAuthTokens();
+    
+    if (!isLoggedIn) {
+      lib.ErrorToast.fire({ 
+        title: "Accès refusé", 
+        text: "Vous devez être connecté pour accéder à cette page" 
+      });
+      lib.appNavigate('/login');
+      return;
+    }
+    
+    // Vérifier que la session est vraiment valide
+    const user = await lib.checkUserLoginStatus();
+    if (!user) {
+      lib.ErrorToast.fire({ 
+        title: "Session expirée", 
+        text: "Veuillez vous reconnecter" 
+      });
+      lib.appNavigate('/login');
+      return;
+    }
+  }
 
   // Loader
   const oldMain = document.querySelector('main');
@@ -218,7 +304,7 @@ export async function renderMain(templateName = 'accueil', pageTitle = '') {
 }
 
 /* ---------------------------------------
-   Routing
+   Routing avec protection
 ---------------------------------------- */
 export async function renderRoute(pathname) {
   // Séparer le pathname des query params
@@ -227,13 +313,14 @@ export async function renderRoute(pathname) {
   let cleanPath = stripBase(pathOnly);
   if (cleanPath !== '/' && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
   const route = routes[cleanPath] || routes['/404'] || routes['/'];
+  
   console.log(`[renderRoute] path="${pathname}" → template="${route.template}"`);
   
   // Animation de sortie
   const oldMain = document.querySelector('main');
   if (oldMain) {
     oldMain.classList.add('fade-out');
-    await new Promise(resolve => setTimeout(resolve, 200)); // Attendre la fin de l'animation
+    await new Promise(resolve => setTimeout(resolve, 250));
   }
   
   window.scrollTo(0, 0);
@@ -255,6 +342,9 @@ export async function renderHeader() {
     if (tpl) wrap.appendChild(tpl.content.cloneNode(true));
   }
   if (!document.querySelector('header')) document.body.prepend(wrap);
+
+  // Vérifier l'authentification AVANT d'initialiser le header
+  await checkAuthentication();
 
   // ✅ initialiser le burger menu et la modal après insertion du header
   setTimeout(() => {
@@ -288,7 +378,7 @@ export async function renderFooter() {
    Boot
 ---------------------------------------- */
 export async function displayCore() {
-  await renderHeader();      // header + init burger + modal
+  await renderHeader();      // header + vérif auth + init burger + modal
   await renderFooter();
 
   renderRoute(location.pathname);

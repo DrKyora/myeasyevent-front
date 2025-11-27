@@ -1,37 +1,46 @@
 // asset/script/login.page.js
 import * as lib from './library.js';
 
+let _deviceSSE = null;
+
 export function init() {
   const form = document.getElementById('loginForm');
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
   const btnConnect = document.getElementById('btnConnect');
+  
   if (!form || !emailInput || !passwordInput || !btnConnect) return;
 
   const onSubmit = async (e) => {
     e.preventDefault();
 
     const email = emailInput.value.trim();
-    const pwd   = passwordInput.value;
+    const pwd = passwordInput.value;
+
+    console.log('[login] 🔄 Tentative connexion avec:', email);
 
     if (!lib.verifyMailSyntax(email)) {
+      console.log('[login] ❌ Email invalide');
       lib.ErrorToast.fire({ title: "Adresse e-mail invalide" });
       return;
     }
+    
     if (!lib.verifyPasswordSyntax(pwd)) {
+      console.log('[login] ❌ Password invalide');
       lib.ErrorToast.fire({
         title: "Mot de passe invalide",
-        text: "Rappel : 8+ caractères, 1 minuscule, 1 majuscule, 1 chiffre, 1 spécial (ex. . ! @ # …)",
+        text: "Rappel : 8+ caractères, 1 minuscule, 1 majuscule, 1 chiffre, 1 spécial",
       });
       return;
     }
 
     try {
-      console.log('[login] POST ->', `${lib.urlBackend}API/connexions.php`);
+      console.log('[login] 📤 POST ->', `${lib.urlBackend}API/connexions.php`);
 
       const res = await fetch(`${lib.urlBackend}API/connexions.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'connectEmailPass',
           email,
@@ -39,48 +48,78 @@ export function init() {
         }),
       });
 
-      // Parsing robuste (si le back renvoie HTML d’erreur, on le voit)
+      console.log('[login] 📥 Status:', res.status, '| OK:', res.ok);
+
       const raw = await res.text();
+      console.log('[login] 📄 Raw response (100 premiers chars):', raw.substring(0, 100));
+      
       let data = null;
-      try { data = JSON.parse(raw); } catch { data = null; }
+      try { 
+        data = JSON.parse(raw);
+        console.log('[login] ✅ Data parsé:', data);
+      } catch { 
+        console.error('[login] ❌ Réponse non-JSON:', raw);
+        throw new Error("Erreur serveur");
+      }
 
       if (!res.ok || !data) {
-        console.error('[login] Réponse non-JSON ou HTTP !OK:', { status: res.status, raw });
+        console.error('[login] ❌ Erreur réseau');
         throw new Error("Erreur réseau");
       }
 
+      console.log('[login] 📊 Status API:', data.status);
+
       if (data.status === 'success') {
+        console.log('[login] ✅ SUCCESS - data.data:', data.data);
+        
         const session = data?.data?.session || data?.data?.tokenSession || null;
 
         if (session) {
-          lib.setCookie('session', session, 604800);
+          console.log('[login] 🎫 Session reçue:', session.substring(0, 30) + '...');
+          console.log('[login] 🍪 Création cookie MYEASYEVENT_Session...');
+          
+          lib.setCookie('MYEASYEVENT_Session', session, 604800);
+          
+          console.log('[login] 🔍 Vérification cookie:', lib.getCookie('MYEASYEVENT_Session') ? '✅ OK' : '❌ FAIL');
+          
           lib.SuccessToast.fire({ title: "Connecté !" });
+          
+          // Mettre à jour le header
+          if (typeof window.updateHeaderAuth === 'function') {
+            window.updateHeaderAuth(true);
+          }
+          
+          console.log('[login] 🚀 Navigation vers /dashboard');
           lib.appNavigate('/dashboard');
           return;
         }
 
-        // Succès SANS session → confirmation device (SSE)
-        const deviceToken =
-          data?.data?.token ||
-          data?.data?.deviceToken ||
-          localStorage.getItem('MYEASYEVENT_Token');
+        // Nouveau device → token device
+        const deviceToken = data?.data?.token || data?.data?.deviceToken || null;
 
         if (deviceToken) {
+          console.log('[login] 📲 Token device reçu, stockage dans localStorage...');
+          localStorage.setItem('MYEASYEVENT_Token', deviceToken);
+          
           lib.SuccessToast.fire({
             title: data.message || "Un e-mail de confirmation a été envoyé",
             text: "Une fois confirmé, cette page se mettra à jour automatiquement.",
           });
+          
           await waitingForConfirmDevice(deviceToken);
           return;
         }
 
-        // Pas de session ni de token : on informe
-        lib.SuccessToast.fire({ title: data.message || "Confirme ton appareil via l’e-mail reçu" });
+        console.warn('[login] ⚠️ Pas de session ni de token device');
+        lib.SuccessToast.fire({ title: data.message || "Confirme ton appareil via l'e-mail reçu" });
         return;
       }
 
+      console.log('[login] ❌ Erreur:', data.message);
       lib.ErrorToast.fire({ title: data.message || "Identifiants incorrects" });
+      
     } catch (err) {
+      console.error('[login] 💥 Exception:', err);
       lib.ErrorToast.fire({ title: err?.message || "Impossible de se connecter" });
     }
   };
@@ -89,22 +128,64 @@ export function init() {
   btnConnect.addEventListener('click', (e) => { e.preventDefault(); onSubmit(e); });
 }
 
+// --- Connexion avec token device après validation ---
+async function connectWithToken(deviceToken) {
+  console.log('[login] 🔑 Connexion avec token device...');
+  
+  try {
+    const res = await fetch(`${lib.urlBackend}API/connexions.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        action: 'connectWToken',
+        token: deviceToken,
+      }),
+    });
+
+    const data = await res.json();
+    console.log('[login] 📥 Response connectWToken:', data);
+
+    if (data.status === 'success' && data.data?.session) {
+      console.log('[login] 🎫 Session reçue:', data.data.session.substring(0, 30) + '...');
+      console.log('[login] 🍪 Création cookie...');
+      
+      lib.setCookie('MYEASYEVENT_Session', data.data.session, 604800);
+      
+      console.log('[login] 🔍 Vérification cookie:', lib.getCookie('MYEASYEVENT_Session') ? '✅ OK' : '❌ FAIL');
+      
+      // Mettre à jour le header
+      if (typeof window.updateHeaderAuth === 'function') {
+        window.updateHeaderAuth(true);
+      }
+      
+      console.log('[login] 🚀 Navigation vers dashboard');
+      lib.appNavigate('/dashboard');
+    } else {
+      console.error('[login] ❌ Pas de session dans la réponse');
+      lib.ErrorToast.fire({ title: "Erreur lors de la connexion" });
+    }
+  } catch (err) {
+    console.error('[login] 💥 Erreur connectWToken:', err);
+    lib.ErrorToast.fire({ title: "Impossible de se connecter" });
+  }
+}
+
 // --- Attente de confirmation du device (SSE) ---
-let _deviceSSE = null;
-
 async function waitingForConfirmDevice(token) {
-  const form    = document.getElementById('loginForm');
+  const form = document.getElementById('loginForm');
   const emailEl = document.getElementById('email');
-  const passEl  = document.getElementById('password');
-  const btn     = document.getElementById('btnConnect');
+  const passEl = document.getElementById('password');
+  const btn = document.getElementById('btnConnect');
 
-  // 1) Désactiver les champs
-  emailEl?.classList.remove('is-valid');
+  console.log('[login] ⏳ Attente validation device...');
+
+  // Désactiver les champs
   if (emailEl) emailEl.disabled = true;
-  if (passEl)  passEl.disabled  = true;
-  if (btn)     btn.disabled     = true;
+  if (passEl) passEl.disabled = true;
+  if (btn) btn.disabled = true;
 
-  // 2) Charger un contenu d’attente si dispo
+  // Charger le template d'attente si disponible
   try {
     const res = await fetch('components/loginEmailCheck.html', { cache: 'no-store' });
     if (res.ok) {
@@ -113,22 +194,22 @@ async function waitingForConfirmDevice(token) {
     }
   } catch {}
 
-  // 3) Petit loader
+  // Loader
   if (form) {
     const loader = document.createElement('div');
     loader.className = 'flex justify-center mt-6';
     loader.innerHTML = `
       <div class="flex flex-col items-center gap-2">
-        <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity="0.25"></circle>
           <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="4"></path>
         </svg>
-        <p class="text-sm text-gray-600">En attente de la confirmation de l’appareil…</p>
+        <p class="text-sm text-gray-600">En attente de la confirmation de l'appareil…</p>
       </div>`;
     form.appendChild(loader);
   }
 
-  // 4) SSE
+  // SSE
   if (!('EventSource' in window)) {
     lib.ErrorToast.fire({ title: "Votre navigateur ne supporte pas la mise à jour en temps réel." });
     return;
@@ -141,20 +222,26 @@ async function waitingForConfirmDevice(token) {
 
   _deviceSSE.addEventListener('validatedevice', (event) => {
     const value = (event.data || '').trim();
+    console.log('[login] 📧 SSE validatedevice reçu:', value);
 
     try { _deviceSSE.close(); } catch {}
     _deviceSSE = null;
 
     if (value) {
+      console.log('[login] ✅ Device validé ! Connexion avec token...');
       lib.SuccessToast.fire({ title: "Appareil confirmé" });
-      lib.appNavigate('/accueil'); // ✅ route correcte (minuscule)
+      
+      // Attendre un peu pour laisser le backend valider le device
+      console.log('[login] ⏱️ Attente 1s pour synchronisation backend...');
+      setTimeout(() => {
+        connectWithToken(token);
+      }, 1000);
     } else {
       setTimeout(() => waitingForConfirmDevice(token), 1500);
     }
   });
 }
 
-// Nettoyage si on quitte la page login
 export function unmount() {
   if (_deviceSSE) {
     try { _deviceSSE.close(); } catch {}

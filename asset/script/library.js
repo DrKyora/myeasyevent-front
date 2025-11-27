@@ -9,7 +9,7 @@ switch (true) {
   case window.location.hostname === '127.0.0.1':
   case window.location.hostname === '::1':
   case window.location.hostname === '[::1]':
-    _urlBackend = 'https://localhost/myeasyevent-back/';
+    _urlBackend = 'http://localhost/myeasyevent-back/';
     break;
   default:
     _urlBackend = 'https://myeasyevent.be/myeasyevent-back/';
@@ -24,8 +24,12 @@ export const urlBackend = _urlBackend;
 export function setCookie(cookieName, cookieValue, sec) {
   const today = new Date(), expires = new Date();
   expires.setTime(today.getTime() + sec * 1000);
-  const cookie_content = `${cookieName}=${encodeURIComponent(cookieValue)};expires=${expires.toGMTString()}`;
+  
+  // Toujours utiliser "/" comme path pour que le cookie soit accessible partout
+  const cookie_content = `${cookieName}=${encodeURIComponent(cookieValue)};expires=${expires.toGMTString()};path=/`;
+  
   document.cookie = cookie_content;
+  console.log('[setCookie]', cookieName, 'créé avec succès');
 }
 
 export function getCookie(cookieName) {
@@ -34,10 +38,20 @@ export function getCookie(cookieName) {
   const ca = decodedCookie.split(";");
   for (let i = 0; i < ca.length; i++) {
     let c = ca[i];
-    while (c.charAt(0) === " ") c = c.substring(1);
-    if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
+    while (c.charAt(0) === " ") {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) === 0) {
+      return c.substring(name.length, c.length);
+    }
   }
+  console.log('[getCookie]', cookieName, 'non trouvé'); // Debug
   return false;
+}
+
+export function deleteCookie(cookieName) {
+  setCookie(cookieName, "", -1);
+  console.log('[deleteCookie]', cookieName, 'supprimé'); // Debug
 }
 
 // ======================
@@ -48,8 +62,7 @@ export function verifyMailSyntax(emailToTest) {
 }
 
 export function verifyPasswordSyntax(passwordToTest) {
-  const regex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\.\-]).{8,}$/;
-  return regex.test(passwordToTest);
+  return (/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\.\-]).{8,}$/).test(passwordToTest);
 }
 
 export function verifyPhoneSyntax(numberToTest) {
@@ -90,55 +103,66 @@ export const ErrorToast = Swal.mixin({
 });
 
 // ======================
-//   SESSION & LOGIN
+//   SESSION & AUTH
 // ======================
-function checkSession() {
-  if (
-    (session =
-      getCookie("MYEASYEVENT_Session") && localStorage.getItem("MYEASYEVENT_Token"))
-  ) {
-    checkSessionStatus((reponse) => {
-      if (!reponse) {
-        appNavigate('/login');
-      } else {
-        if (!sessionStorage.getItem("avatar")) {
-          sessionStorage.setItem("avatar", reponse.avatar);
-        }
-        const avatar = document.getElementById("navbarAvatar");
-        if (avatar && sessionStorage.getItem("avatar")) {
-          avatar.src = urlBackend + "img/avatars/" + sessionStorage.getItem("avatar");
-        }
-      }
+
+/**
+ * Vérifie si l'utilisateur est connecté (session valide)
+ * @returns {Promise<Object|null>} Les données utilisateur si connecté, null sinon
+ */
+export async function checkUserLoginStatus() {
+  const session = getCookie("MYEASYEVENT_Session");
+  
+  if (!session) {
+    console.log('[checkUserLoginStatus] Pas de session trouvée');
+    return null;
+  }
+
+  try {
+    console.log('[checkUserLoginStatus] Vérification session...');
+    
+    const res = await fetch(`${urlBackend}API/connexions.php`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: 'include', // Important pour les cookies
+      body: JSON.stringify({
+        action: "checkSession",
+        session: session,
+      }),
     });
-  } else {
-    appNavigate('/login');
+
+    const data = await res.json();
+    console.log('[checkUserLoginStatus] Réponse:', data);
+    
+    if (data.status === "success" && data.data?.user) {
+      // Stocker l'avatar si disponible
+      if (data.data.user.avatar) {
+        sessionStorage.setItem("avatar", data.data.user.avatar);
+      }
+      return data.data.user;
+    }
+    
+    return null;
+  } catch (err) {
+    console.error("[checkUserLoginStatus] Erreur:", err);
+    return null;
   }
 }
 
-function checkSessionStatus(callback) {
-  fetch(urlBackend + "API/connexions.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "checkSession",
-      session: getCookie("MYEASYEVENT_Session"),
-    }),
-  })
-    .then((response) => response.json())
-    .then((response) => {
-      if (response.status === "success") {
-        callback(response.data);
-      } else {
-        callback(false);
-      }
-    });
-}
-
-function logout() {
-  localStorage.removeItem("MYEASYEVENT_Token");
-  setCookie("MYEASYEVENT_Session", "", -1);
+/**
+ * Déconnecte l'utilisateur
+ */
+export function logout() {
+  deleteCookie("MYEASYEVENT_Session");
   sessionStorage.clear();
-  appNavigate('/login');
+  
+  // Rafraîchir le header
+  if (typeof window.updateHeaderAuth === 'function') {
+    window.updateHeaderAuth(false);
+  }
+  
+  appNavigate('/accueil');
+  SuccessToast.fire({ title: "Déconnecté avec succès" });
 }
 
 // ======================
@@ -147,6 +171,8 @@ function logout() {
 export function appNavigate(to = '/') {
   const rel = toAppPath(to);
   const target = `${APP_BASE}${rel}`;
+  console.log('[appNavigate] Navigation vers:', target);
+  
   if (typeof window.navigate === 'function') {
     window.navigate(rel);
   } else {
