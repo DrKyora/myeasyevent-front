@@ -375,11 +375,56 @@ export async function renderFooter() {
 }
 
 /* ---------------------------------------
+   Auto-reconnexion au chargement
+---------------------------------------- */
+async function handleAutoReconnect() {
+  const session = lib.getCookie('MYEASYEVENT_Session');
+  const deviceToken = localStorage.getItem('MYEASYEVENT_Token');
+
+  // Cas 1 : Pas de session mais token device présent
+  if (!session && deviceToken) {
+    const success = await lib.tryConnexionWToken();
+    if (success && typeof window.updateHeaderAuth === 'function') {
+      window.updateHeaderAuth(true);
+    }
+    return;
+  }
+
+  // Cas 2 : Session existe
+  if (session && deviceToken) {
+    const user = await lib.checkUserLoginStatus();
+    
+    if (user) {
+      // Session valide
+      if (typeof window.updateHeaderAuth === 'function') {
+        window.updateHeaderAuth(true);
+      }
+    } else {
+      // Session invalide → reconnexion avec token device
+      const success = await lib.tryConnexionWToken();
+      if (success && typeof window.updateHeaderAuth === 'function') {
+        window.updateHeaderAuth(true);
+      }
+    }
+    return;
+  }
+
+  // Cas 3 : Session sans token device → nettoyer
+  if (session && !deviceToken) {
+    lib.deleteCookie('MYEASYEVENT_Session');
+    sessionStorage.clear();
+  }
+}
+
+/* ---------------------------------------
    Boot
 ---------------------------------------- */
 export async function displayCore() {
   await renderHeader();      // header + vérif auth + init burger + modal
   await renderFooter();
+  
+  // Auto-reconnexion au chargement
+  await handleAutoReconnect();
 
   renderRoute(location.pathname);
 

@@ -63,8 +63,8 @@
     </header>
 
     <!-- Modal utilisateur (desktop uniquement) -->
-    <div id="userModal" class="fixed hidden z-50 top-20 right-4">
-        <div class="bg-white rounded-lg shadow-xl border border-gray-200 p-4 relative min-w-64 max-w-80">
+    <div id="userModal" class="fixed hidden z-50 top-21 right-1 bg-blue-dianne-500 rounded-lg border border-blue-dianne-500">
+        <div class="p-4 relative max-w-80">
             <!-- Bouton fermer -->
             <button id="closedModal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-lg w-6 h-6 flex items-center justify-center cursor-pointer">
                 ×
@@ -83,13 +83,14 @@
                 </div>
             </div>
             <!-- Contenu pour utilisateur connecté -->
-            <div id="connectedContent" class="text-center hidden">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">Mon Compte</h3>
+            <div id="connectedContent" class="text-center hidden ">
+                <h3 class="text-white text-base pb-3 mb-3 border-b border-burnt-sienna-500">Mon Compte</h3>
                 <div class="space-y-2">
-                    <button id="dashboardBtn" class="w-full bg-blue-dianne-500 text-white py-2 px-3 rounded text-sm hover:bg-blue-dianne-600 transition-colors flex items-center justify-center">
+                    <button id="dashboardBtn" class="w-full text-white py-2 px-3 rounded hover:bg-blue-dianne-600 transition-colors flex items-center justify-center">
                         <img src="./asset/svg/dashboard.svg" alt="" class="w-4 h-4 mr-2">Dashboard
                     </button>
-                    <button class="_logout-btn w-full bg-red-500 text-white py-2 px-3 rounded text-sm hover:bg-red-600 transition-colors">
+                    <button class="_logout-btn flex items-center justify-center w-full text-white py-2 px-3 rounded transition-colors">
+                        <img src="./asset/svg/logout.svg" alt="" class="mr-2">
                         Déconnexion
                     </button>
                 </div>

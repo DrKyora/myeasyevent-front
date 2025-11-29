@@ -150,6 +150,45 @@ export async function checkUserLoginStatus() {
 }
 
 /**
+ * Tente une connexion avec le token device stocké
+ * @returns {Promise<boolean>} true si connexion réussie, false sinon
+ */
+export async function tryConnexionWToken() {
+  const deviceToken = localStorage.getItem('MYEASYEVENT_Token');
+  
+  if (!deviceToken) {
+    return false;
+  }
+
+  try {
+    const res = await fetch(`${urlBackend}API/connexions.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        action: 'connectWToken',
+        token: deviceToken,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.status === 'success' && data.data?.session) {
+      setCookie('MYEASYEVENT_Session', data.data.session, 604800);
+      return true;
+    }
+    
+    // Token invalide ou expiré → le supprimer
+    localStorage.removeItem('MYEASYEVENT_Token');
+    return false;
+    
+  } catch (err) {
+    console.error('[tryConnexionWToken] Erreur:', err);
+    return false;
+  }
+}
+
+/**
  * Déconnecte l'utilisateur
  */
 export function logout() {
