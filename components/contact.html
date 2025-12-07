@@ -1,6 +1,58 @@
 <template id="contact">
-    <main>
-        <h1>Page Contact</h1>
-        <p>Formulaire de contact ici.</p>
+    <main class="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4">
+        <div class="w-full max-w-2xl">
+            <!-- Titre -->
+            <h2 class="text-blue-dianne-500 text-center mb-12">
+                Contactez-nous
+            </h2>
+            <!-- Formulaire -->
+            <div class="bg-blue-dianne-500 p-4 rounded-lg">
+                <form id="contactForm" class="flex flex-col bg-aqua-haze-500 rounded-lg p-2 md:p-4 shadow-lg gap-4">
+                    <!-- Nom et Prénom -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                        <!-- Nom -->
+                        <fieldset class="border-1 border-blue-dianne-500 px-4 pt-2 pb-3 focus-within:border-burnt-sienna-500 transition-colors">
+                            <legend class="text-gray-700 text-sm px-2">
+                                Nom <span class="text-red-500">*</span>
+                            </legend>
+                            <input type="text" id="lastName" placeholder="Nom" required class="w-full focus:outline-none text-blue-dianne-500 bg-transparent">
+                        </fieldset>
+                        <!-- Prénom -->
+                        <fieldset class="border-1 border-blue-dianne-500 px-4 pt-2 pb-3 focus-within:border-burnt-sienna-500 transition-colors">
+                            <legend class="text-gray-700 text-sm px-2">
+                                Prénom <span class="text-red-500">*</span>
+                            </legend>
+                            <input type="text" id="firstName" placeholder="Prénom" required class="w-full focus:outline-none text-blue-dianne-500 bg-transparent">
+                        </fieldset>
+                    </div>
+                    <!-- Email -->
+                    <div class="p-4">
+                        <fieldset class="border-1 border-blue-dianne-500 px-4 pt-2 pb-3 focus-within:border-burnt-sienna-500 transition-colors">
+                            <legend class="text-gray-700 text-sm px-2">
+                                Email <span class="text-red-500">*</span>
+                            </legend>
+                            <input type="email" id="email" placeholder="Adresse email" required class="w-full focus:outline-none text-blue-dianne-500 bg-transparent">
+                        </fieldset>
+                    </div>
+                    
+                    <!-- Message -->
+                    <div class="p-4">
+                        <fieldset class="border-1 border-blue-dianne-500 px-4 pt-2 pb-3 focus-within:border-burnt-sienna-500 transition-colors">
+                            <legend class="text-gray-700 text-sm px-2">
+                                Message <span class="text-red-500">*</span>
+                            </legend>
+                            <textarea id="message" name="message" rows="5" placeholder="Tapez votre message" required class="w-full focus:outline-none text-blue-dianne-500 bg-transparent resize-none"></textarea>
+                            <p id="messageCounter" class="text-xs text-gray-500 mt-1 px-2">0/50 caractères minimum</p>
+                        </fieldset>
+                    </div>
+                    <!-- Bouton Envoyer -->
+                    <div class="flex justify-center">
+                        <button id="sendMail" type="submit" class="bg-burnt-sienna-500 hover:bg-burnt-sienna-600 text-white font-semibold px-12 py-3 rounded-lg transition-colors shadow-md">
+                            Envoyer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
 </template>
