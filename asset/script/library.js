@@ -124,7 +124,7 @@ export async function checkUserLoginStatus() {
     const res = await fetch(`${urlBackend}API/connexions.php`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: 'include', // Important pour les cookies
+      credentials: 'include',
       body: JSON.stringify({
         action: "checkSession",
         session: session,
@@ -135,12 +135,13 @@ export async function checkUserLoginStatus() {
     console.log('[checkUserLoginStatus] Réponse:', data);
     
     if (data.status === "success" && data.data?.user) {
-      // Stocker l'avatar si disponible
-      if (data.data.user.avatar) {
-        sessionStorage.setItem("avatar", data.data.user.avatar);
-      }
-      return data.data.user;
-    }
+  // ⭐ Convertir isAdmin (booléen) en role (string)
+  const role = data.data.user.isAdmin ? 'admin' : 'user';
+  sessionStorage.setItem("userRole", role);
+  console.log('✅ Rôle stocké:', role); // Debug
+  
+  return data.data.user;
+}
     
     return null;
   } catch (err) {

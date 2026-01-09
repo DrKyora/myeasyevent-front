@@ -9,7 +9,9 @@ export const APP_BASE = IS_LOCAL ? '/myeasyevent-front' : '';
 export const routes = {
   '/accueil':          { template: 'accueil',          title: 'Accueil - My Easy Event' },
   '/evenements':       { template: 'evenements',       title: 'Événements - My Easy Event' },
+  '/event-detail':     { template: 'event-detail',     title: 'Détail Événement - My Easy Event' },
   '/dashboard':        { template: 'dashboard',        title: 'Dashboard - My Easy Event' },
+  '/create-event':     { template: 'create-event',     title: 'Créer un Événement - My Easy Event' },
   '/contact':          { template: 'contact',          title: 'Contact - My Easy Event' },
   '/login':            { template: 'login',            title: 'Connexion - My Easy Event' },
   '/register':         { template: 'register',         title: 'Inscription - My Easy Event' },

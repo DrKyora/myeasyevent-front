@@ -1,6 +1,189 @@
 <template id="evenements">
-    <main>
-        <h1>Page Événements</h1>
-        <p>Liste de tous les événements ici.</p>
+    <main class="min-h-screen bg-gray-100 py-12 px-4">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- Titre -->
+            <h2 class="text-blue-dianne-500 text-center mb-12 text-2xl md:text-3xl font-semibold">
+                Événements à venir
+            </h2>
+
+            <!-- Barre de recherche et filtres -->
+            <div class="flex flex-col md:flex-row gap-4 mb-12 max-w-4xl mx-auto">
+                <!-- Recherche -->
+                <div class="flex-1 relative">
+                    <input 
+                        type="text" 
+                        id="searchEvents" 
+                        placeholder="Mots clés" 
+                        class="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500 transition-colors"
+                    >
+                    <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                
+                <!-- Bouton Filtres -->
+                <button id="filterBtn" class="px-6 py-3 border-2 border-gray-300 rounded-lg hover:border-blue-dianne-500 transition-colors flex items-center justify-center gap-2 bg-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                    <span>Filtres</span>
+                </button>
+            </div>
+
+            <!-- Grille d'événements (sera remplie dynamiquement) -->
+            <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                <!-- Les événements seront injectés ici -->
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex items-center justify-between bg-blue-dianne-500 rounded-lg p-4">
+                <!-- Bouton Précédent -->
+                <button id="prevPage" class="bg-burnt-sienna-500 hover:bg-burnt-sienna-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    <span class="hidden md:inline">Précédent</span>
+                </button>
+
+                <!-- Numéros de page -->
+                <div id="paginationNumbers" class="flex gap-2">
+                    <!-- Généré dynamiquement -->
+                </div>
+
+                <!-- Bouton Suivant -->
+                <button id="nextPage" class="bg-burnt-sienna-500 hover:bg-burnt-sienna-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span class="hidden md:inline">Suivant</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+
+        </div>
+        
+        <!-- Modal Filtres -->
+        <div id="filterModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-gray-100 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+
+                <!-- Header -->
+                <div class="sticky top-0 bg-gray-100 border-b-2 border-burnt-sienna-500 p-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-2xl font-serif italic text-blue-dianne-500">Filtres</h2>
+                        <button id="closeFilterModal" class="text-gray-500 hover:text-blue-dianne-500 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            
+                <!-- Contenu -->
+                <div class="p-6">
+
+                    <!-- Catégories -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-blue-dianne-500">Catégories</h3>
+                            <button class="text-sm text-burnt-sienna-500 hover:underline" data-clear="categories">Effacer</button>
+                        </div>
+                        <select id="categoryFilter" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500 transition-colors bg-white">
+                            <option value="">Choisissez une catégorie</option>
+                            <option value="festival">Festival</option>
+                            <option value="exposition">Exposition</option>
+                            <option value="conference">Conférence</option>
+                            <option value="concert">Concert</option>
+                            <option value="sport">Sport</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                
+                    <hr class="border-burnt-sienna-500 mb-6">
+                
+                    <!-- Date -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-blue-dianne-500">Date</h3>
+                            <button class="text-sm text-burnt-sienna-500 hover:underline" data-clear="date">Effacer</button>
+                        </div>
+                        <div class="relative">
+                            <input 
+                                type="date" 
+                                id="dateFilter" 
+                                placeholder="dd-mm-yyyy"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500 transition-colors"
+                            >
+                            <svg class="w-5 h-5 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                
+                    <hr class="border-burnt-sienna-500 mb-6">
+                
+                    <!-- Âge -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-blue-dianne-500">Âge</h3>
+                            <button class="text-sm text-burnt-sienna-500 hover:underline" data-clear="age">Effacer</button>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="radio" name="ageFilter" value="all" checked class="w-5 h-5 text-blue-dianne-500 border-gray-300 focus:ring-blue-dianne-500">
+                                <span class="text-gray-700">Tout public</span>
+                            </label>
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="radio" name="ageFilter" value="12" class="w-5 h-5 text-blue-dianne-500 border-gray-300 focus:ring-blue-dianne-500">
+                                <span class="text-gray-700">12+</span>
+                            </label>
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="radio" name="ageFilter" value="16" class="w-5 h-5 text-blue-dianne-500 border-gray-300 focus:ring-blue-dianne-500">
+                                <span class="text-gray-700">16+</span>
+                            </label>
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="radio" name="ageFilter" value="18" class="w-5 h-5 text-blue-dianne-500 border-gray-300 focus:ring-blue-dianne-500">
+                                <span class="text-gray-700">18+</span>
+                            </label>
+                        </div>
+                    </div>
+                
+                    <hr class="border-burnt-sienna-500 mb-6">
+                
+                    <!-- Distance -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-blue-dianne-500">Distance</h3>
+                            <button class="text-sm text-burnt-sienna-500 hover:underline" data-clear="distance">Effacer</button>
+                        </div>
+                        <div class="space-y-3">
+                            <input 
+                                type="range" 
+                                id="distanceFilter" 
+                                min="0" 
+                                max="100" 
+                                value="0" 
+                                class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-dianne-500"
+                            >
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span>0 km</span>
+                                <span id="distanceValue" class="font-semibold text-blue-dianne-500">0 km</span>
+                                <span>100 km</span>
+                            </div>
+                        </div>
+                    </div>
+                
+                </div>
+            
+                <!-- Footer avec boutons -->
+                <div class="sticky bottom-0 bg-blue-dianne-500 p-4 flex gap-4 rounded-b-lg">
+                    <button id="clearAllFilters" class="flex-1 bg-transparent border-2 border-white text-white px-6 py-3 rounded-lg hover:bg-white hover:text-blue-dianne-500 transition-colors font-semibold">
+                        Tout effacer
+                    </button>
+                    <button id="applyFilters" class="flex-1 bg-burnt-sienna-500 hover:bg-burnt-sienna-600 text-white px-6 py-3 rounded-lg transition-colors font-semibold">
+                        Appliquer
+                    </button>
+                </div>
+            </div>
+        </div>
     </main>
 </template>

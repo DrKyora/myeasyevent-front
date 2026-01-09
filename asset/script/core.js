@@ -213,7 +213,7 @@ export async function renderMain(templateName = 'accueil', pageTitle = '') {
   const name = String(templateName || '').trim();
 
   // Routes protégées
-  const protectedRoutes = ['dashboard'];
+  const protectedRoutes = ['dashboard', 'create-event'];
   
   // Si c'est une route protégée, vérifier l'authentification
   if (protectedRoutes.includes(name)) {

@@ -11,36 +11,51 @@ export function init() {
   
   if (!form || !emailInput || !passwordInput || !btnConnect) return;
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
+const onSubmit = async (e) => {
+  e.preventDefault();
 
-    const email = emailInput.value.trim();
-    const pwd = passwordInput.value;
+  const email = emailInput.value.trim();
+  const pwd = passwordInput.value;
 
-    if (!lib.verifyMailSyntax(email)) {
-      lib.ErrorToast.fire({ title: "Adresse e-mail invalide" });
+  if (!lib.verifyMailSyntax(email)) {
+    lib.ErrorToast.fire({ title: "Adresse e-mail invalide" });
+    return;
+  }
+  
+  if (!lib.verifyPasswordSyntax(pwd)) {
+    lib.ErrorToast.fire({
+      title: "Mot de passe invalide",
+      text: "Rappel : 8+ caractères, 1 minuscule, 1 majuscule, 1 chiffre, 1 spécial",
+    });
+    return;
+  }
+
+  try {
+    // ✅ 1. D'abord tenter avec le deviceToken existant
+    const hasValidToken = await lib.tryConnexionWToken();
+    
+    if (hasValidToken) {
+      lib.SuccessToast.fire({ title: "Connexion automatique réussie !" });
+      
+      if (typeof window.updateHeaderAuth === 'function') {
+        window.updateHeaderAuth(true);
+      }
+      
+      lib.appNavigate('/dashboard');
       return;
     }
     
-    if (!lib.verifyPasswordSyntax(pwd)) {
-      lib.ErrorToast.fire({
-        title: "Mot de passe invalide",
-        text: "Rappel : 8+ caractères, 1 minuscule, 1 majuscule, 1 chiffre, 1 spécial",
-      });
-      return;
-    }
-
-    try {
-      const res = await fetch(`${lib.urlBackend}API/connexions.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          action: 'connectEmailPass',
-          email,
-          password: pwd,
-        }),
-      });
+    // ✅ 2. Si pas de token valide, continuer avec email/password
+    const res = await fetch(`${lib.urlBackend}API/connexions.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        action: 'connectEmailPass',
+        email,
+        password: pwd,
+      }),
+    });
 
       const raw = await res.text();
       

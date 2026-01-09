@@ -1,0 +1,263 @@
+<template id="create-event">
+    <main class="min-h-screen bg-gray-100 flex">
+        <!-- ✅ SIDEBAR GAUCHE - TOUJOURS VISIBLE -->
+        <div class="w-20 bg-blue-dianne-500 flex flex-col items-center py-6 gap-6 flex-shrink-0">
+            <!-- Bouton Design -->
+            <button id="btnDesign" class="flex flex-col items-center gap-2 text-white hover:text-burnt-sienna-300 transition-colors">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-xs">Design</span>
+            </button>
+
+            <!-- Bouton Sauvegarder -->
+            <button id="btnSave" class="flex flex-col items-center gap-2 text-white hover:text-burnt-sienna-300 transition-colors">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                <span class="text-xs">Sauvegarder</span>
+            </button>
+
+            <!-- Bouton Publier -->
+            <button id="btnPublish" class="flex flex-col items-center gap-2 text-white hover:text-burnt-sienna-300 transition-colors">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-xs">Publier</span>
+            </button>
+        </div>
+
+        <!-- ✅ MODAL CHOIX TEMPLATE (flottante à côté de la sidebar) -->
+        <div id="templateSelectorModal" class="hidden fixed left-20 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 overflow-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-blue-dianne-500">Choisir un template</h3>
+                    <button id="closeTemplateModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Liste des templates (version compacte) -->
+                <div id="templateSelectorList" class="space-y-3">
+                    <!-- Les templates seront injectés ici -->
+                </div>
+            </div>
+        </div>
+        <!-- ZONE CENTRALE - Change selon l'étape -->
+        <div class="flex-1 overflow-hidden">
+            <!-- Étape 1: Sélection du template (affichée par défaut) -->
+            <div id="templateSelectionStep" class="h-full overflow-auto py-12 px-4">
+                <div class="max-w-6xl mx-auto">
+                    <!-- En-tête -->
+                    <div class="mb-8">
+                        <button id="backToDashboard"
+                            class="text-blue-dianne-500 hover:text-blue-dianne-600 flex items-center gap-2 mb-4">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span>Retour au dashboard</span>
+                        </button>
+                        <h1 class="text-3xl md:text-4xl font-serif italic text-blue-dianne-500">
+                            Choisissez un template
+                        </h1>
+                        <p class="text-gray-600 mt-2">
+                            Sélectionnez un modèle pour créer votre événement
+                        </p>
+                    </div>
+
+                    <!-- Loader -->
+                    <div id="templatesLoader" class="text-center py-12">
+                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-dianne-500 border-t-transparent"></div>
+                        <p class="text-gray-600 mt-4">Chargement des templates...</p>
+                    </div>
+
+                    <!-- Grille des templates -->
+                    <div id="templatesGrid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Les templates seront injectés ici par JS -->
+                    </div>
+
+                    <!-- Message si aucun template -->
+                    <div id="noTemplatesMessage" class="hidden text-center py-12">
+                        <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="text-gray-600 mt-4">Aucun template disponible pour le moment</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Étape 2: Édition avec preview (cachée par défaut) -->
+            <div id="templateEditorStep" class="hidden h-full flex overflow-hidden">
+                <!-- Preview du template -->
+                <div class="flex-1 bg-gray-200 p-8 overflow-auto">
+                    <div class="bg-white rounded-lg shadow-xl max-w-2xl mx-auto">
+                        <!-- Le template HTML sera injecté ici -->
+                        <div id="templatePreview"></div>
+                    </div>
+                </div>
+
+                <!-- Panel d'édition (slide depuis la droite) -->
+                <div id="editorPanel" class="w-96 bg-white shadow-2xl overflow-auto border-l border-gray-200 transform translate-x-0 transition-transform duration-300">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-blue-dianne-500">Modifier l'événement</h2>
+                            <button id="closeEditorPanel" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <form id="eventEditorForm" class="space-y-4">
+                            <!-- Titre -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Titre <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="editTitle" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500"
+                                    placeholder="Titre de l'événement" />
+                            </div>
+
+                            <!-- Description -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Description
+                                </label>
+                                <textarea id="editDescription" rows="4"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500 resize-none"
+                                    placeholder="Décrivez votre événement..."></textarea>
+                            </div>
+
+                            <!-- Date de début -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Date de début <span class="text-red-500">*</span>
+                                </label>
+                                <input type="datetime-local" id="editStartDate" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500" />
+                            </div>
+
+                            <!-- Date de fin -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Date de fin <span class="text-red-500">*</span>
+                                </label>
+                                <input type="datetime-local" id="editEndDate" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500" />
+                            </div>
+
+                            <!-- ✅ CHAMPS D'ADRESSE SÉPARÉS -->
+                            <!-- Rue -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Rue <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="editStreet" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500"
+                                    placeholder="Rue de la République" />
+                            </div>
+
+                            <!-- Numéro -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Numéro <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="editStreetNumber" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500"
+                                    placeholder="123" />
+                            </div>
+
+                            <!-- Code postal -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Code postal <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="editZipCode" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500"
+                                    placeholder="75001" />
+                            </div>
+
+                            <!-- Ville -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Ville <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="editCity" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500"
+                                    placeholder="Paris" />
+                            </div>
+
+                            <!-- Pays -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Pays <span class="text-red-500">*</span>
+                                </label>
+                                <select id="editCountry" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500 bg-white">
+                                    <option value="France">France</option>
+                                    <option value="Belgique">Belgique</option>
+                                    <option value="Suisse">Suisse</option>
+                                    <option value="Canada">Canada</option>
+                                </select>
+                            </div>
+
+                            <!-- ✅ Bouton de validation de l'adresse -->
+                            <div>
+                                <button type="button" id="btnValidateAddress" 
+                                    class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                    ✓ Vérifier l'adresse
+                                </button>
+                                <p id="addressValidationStatus" class="text-xs mt-2 text-gray-500"></p>
+                            </div>
+
+                            <!-- Nombre de places -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Nombre de places <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" id="editCapacity" required min="1"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500"
+                                    placeholder="Ex: 100" />
+                            </div>
+
+                            <!-- Âge minimum -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Âge minimum
+                                </label>
+                                <select id="editMinAge"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500 bg-white">
+                                    <option value="0">Tout public</option>
+                                    <option value="12">12+</option>
+                                    <option value="16">16+</option>
+                                    <option value="18">18+</option>
+                                </select>
+                            </div>
+
+                            <!-- Image -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Image de l'événement
+                                </label>
+                                <input type="file" id="editImage" accept="image/*"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-dianne-500 bg-white text-sm" />
+                            </div>
+
+                            <!-- Couleur du titre (exemple de personnalisation) -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Couleur du titre
+                                </label>
+                                <input type="color" id="editTitleColor" value="#1e3a5f"
+                                    class="w-full h-10 border border-gray-300 rounded-lg cursor-pointer" />
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</template>
