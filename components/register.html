@@ -6,42 +6,42 @@
                 <!-- Formulaire -->
                 <div class="bg-white rounded-lg p-4 md:p-8 flex-1 min-w-0">
                     <div class="flex justify-center w-full mb-4 border-b border-burnt-sienna-500 pb-2">
-                        <h3 class="text-xl font-serif italic text-blue-dianne-500  text-center md:text-left">Inscription</h3>
+                        <h3 class="text-xl font-serif italic text-blue-dianne-500 text-center md:text-left">Inscription</h3>
                     </div>
-                    <form class="flex flex-col  gap-6">
+                    <form id="registerForm" class="flex flex-col gap-6">
                         <div class="flex flex-col md:flex-row gap-4">
                             <div class="flex-1">
                                 <label class="block text-xs text-blue-dianne-500 mb-1">
                                     Nom <span class="text-burnt-sienna-500">*</span>
                                 </label>
-                                <input type="text" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Nom" required>
+                                <input id="lastName" type="text" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Nom" required>
                             </div>
                             <div class="flex-1">
-                                <label  class="block text-xs text-blue-dianne-500 mb-1">
+                                <label class="block text-xs text-blue-dianne-500 mb-1">
                                     Prénom <span class="text-burnt-sienna-500">*</span>
                                 </label>
-                                <input type="text" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Prénom" required>
+                                <input id="firstName" type="text" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Prénom" required>
                             </div>
                         </div>
                         <div>
                             <label class="block text-xs text-blue-dianne-500 mb-1">
                                 Email <span class="text-burnt-sienna-500">*</span>
                             </label>
-                            <input type="email" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Adresse email" required>
+                            <input id="email" type="email" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Adresse email" required>
                         </div>
                         <div>
                             <label class="block text-xs text-blue-dianne-500 mb-1">
                                 Mot de passe <span class="text-burnt-sienna-500">*</span>
                             </label>
-                            <input type="password" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Mot de passe" required>
+                            <input id="password" type="password" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Mot de passe" required>
                         </div>
                         <div>
                             <label class="block text-xs text-blue-dianne-500 mb-1">
                                 Confirmation <span class="text-burnt-sienna-500">*</span>
                             </label>
-                            <input type="password" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Confirmation" required>
+                            <input id="confirmPassword" type="password" class="w-full border border-blue-dianne-200 rounded p-2 text-sm" placeholder="Confirmation" required>
                         </div>
-                        <button class="bg-burnt-sienna-500 text-white rounded px-6 py-2 mt-2 self-end hover:bg-burnt-sienna-600 transition">Inscription</button>
+                        <button type="submit" id="registerBtn" class="bg-burnt-sienna-500 text-white rounded px-6 py-2 mt-2 self-end hover:bg-burnt-sienna-600 transition">Inscription</button>
                     </form>
                 </div>
                 <!-- Informations -->

@@ -1,6 +1,10 @@
 // dashboard.page.js
 import * as lib from './library.js';
 
+if (typeof moment !== 'undefined') {
+    moment.locale('fr');
+}
+
 // Tracker les sections déjà chargées
 const loadedSections = {
     informations: false,
@@ -504,8 +508,25 @@ function renderEventCard(event, template) {
         : 'Complet';
     
     // Format des dates
-    const startDate = moment(event.startDate).format('DD MMMM YYYY à HH:mm');
-    const endDate = moment(event.endDate).format('DD MMMM YYYY à HH:mm');
+    let startDate, endDate;
+    if (typeof moment !== 'undefined') {
+        startDate = moment(event.startDate).format('DD MMMM YYYY à HH:mm');
+        endDate = moment(event.endDate).format('DD MMMM YYYY à HH:mm');
+    } else {
+        // Fallback si moment.js n'est pas chargé
+        const formatDate = (dateString) => {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR', { 
+                day: '2-digit', 
+                month: 'long', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+        startDate = formatDate(event.startDate);
+        endDate = formatDate(event.endDate);
+    }
     
     // Image par défaut si pas d'image
     const imageUrl = event.image || '/asset/img/default-event.jpg';

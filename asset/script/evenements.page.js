@@ -206,7 +206,17 @@ function getAgeBadgeHTML(ageRestriction) {
 
 // Formater une date avec Moment.js
 function formatDate(dateString) {
-    return moment(dateString).format('DD/MM/YYYY');
+    if (typeof moment !== 'undefined') {
+        return moment(dateString).format('DD/MM/YYYY');
+    } else {
+        // Fallback si moment.js n'est pas chargé
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric'
+        });
+    }
 }
 
 // Formater l'adresse depuis l'objet
@@ -217,8 +227,8 @@ function formatAddress(address) {
     
     // Rue et numéro
     if (address.street) {
-        const street = address.streetNumer 
-            ? `${address.street} ${address.streetNumer}`
+        const street = address.streetNumber  // ✅ CORRIGÉ : streetNumber au lieu de streetNumer
+            ? `${address.street} ${address.streetNumber}`
             : address.street;
         parts.push(street);
     }
@@ -353,16 +363,28 @@ function applyEventFilters(filters, updateURLFlag = true) {
         }
         
         // Filtre par date
+                // Filtre par date
         if (filters.date) {
-            const filterDate = moment(filters.date);
-            const eventStart = moment(event.startDate);
-            const eventEnd = moment(event.endDate);
-            
-            if (filterDate.isBefore(eventStart, 'day') || filterDate.isAfter(eventEnd, 'day')) {
-                return false;
+            if (typeof moment !== 'undefined') {
+                const filterDate = moment(filters.date);
+                const eventStart = moment(event.startDate);
+                const eventEnd = moment(event.endDate);
+                
+                if (filterDate.isBefore(eventStart, 'day') || filterDate.isAfter(eventEnd, 'day')) {
+                    return false;
+                }
+            } else {
+                // Fallback sans moment.js
+                const filterDate = new Date(filters.date);
+                const eventStart = new Date(event.startDate);
+                const eventEnd = new Date(event.endDate);
+                
+                if (filterDate < eventStart || filterDate > eventEnd) {
+                    return false;
+                }
             }
         }
-        
+                
         // Filtre par catégorie
         if (filters.category && filters.category !== '') {
             if (event.category && event.category.toLowerCase() !== filters.category.toLowerCase()) {
