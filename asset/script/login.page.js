@@ -31,6 +31,21 @@ const onSubmit = async (e) => {
   }
 
   try {
+    // ✅ 1. D'abord tenter avec le deviceToken existant
+    const hasValidToken = await lib.tryConnexionWToken();
+    
+    if (hasValidToken) {
+      lib.SuccessToast.fire({ title: "Connexion automatique réussie !" });
+      
+      if (typeof window.updateHeaderAuth === 'function') {
+        window.updateHeaderAuth(true);
+      }
+      
+      lib.appNavigate('/dashboard');
+      return;
+    }
+    
+    // ✅ 2. Si pas de token valide, continuer avec email/password
     const res = await fetch(`${lib.urlBackend}API/connexions.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
