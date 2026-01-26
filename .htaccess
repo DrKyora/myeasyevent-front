@@ -20,7 +20,6 @@ Options -Indexes -MultiViews
 # 4) Réécriture SPA
 <IfModule mod_rewrite.c>
 	RewriteEngine On
-	RewriteBase /
 
 	# Fichiers/dossiers existants -> servir normalement
 	RewriteCond %{REQUEST_FILENAME} -f [OR]

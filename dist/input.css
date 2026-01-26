@@ -18,6 +18,7 @@
         justify-content: space-between;
         min-height: 100vh;
         overflow-x: hidden;
+        background-color: var(--color-aqua-haze-500);
     }
     h1{
         color: var(--color-aqua-haze-500);
@@ -51,7 +52,6 @@
     }
     main{
         animation: none;
-        background-color: var(--color-aqua-haze-500);
     }
     main.fade-in {
     animation: fadeIn 0.4s ease-in-out;

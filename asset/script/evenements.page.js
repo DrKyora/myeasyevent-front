@@ -318,8 +318,6 @@ function initFilterModal() {
         window.history.pushState({}, '', window.location.pathname);
         filteredEvents = [...allEvents];
         currentPage = 1;
-        renderEvents();
-        closeModal();
     });
     
     applyFilters?.addEventListener('click', () => {
