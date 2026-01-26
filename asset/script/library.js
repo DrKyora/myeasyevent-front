@@ -194,6 +194,7 @@ export async function tryConnexionWToken() {
  */
 export function logout() {
   deleteCookie("MYEASYEVENT_Session");
+  localStorage.removeItem('MYEASYEVENT_Token');
   sessionStorage.clear();
   
   // Rafraîchir le header
