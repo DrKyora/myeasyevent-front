@@ -135,7 +135,7 @@ function renderEvents() {
     // Si aucun événement
     if (eventsToShow.length === 0) {
         const noResults = document.createElement('div');
-        noResults.className = 'col-span-full text-center py-12';
+        noResults.className = 'col-span-full text-center py-12 flex items-center justify-center';
         const text = document.createElement('p');
         text.className = 'text-gray-500 text-lg';
         text.textContent = 'Aucun événement trouvé';
@@ -275,7 +275,6 @@ function initFilterModal() {
         e.preventDefault();
         filterModal.classList.remove('hidden');
         filterModal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
     });
     
     closeFilterModal?.addEventListener('click', closeModal);

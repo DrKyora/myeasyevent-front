@@ -1,6 +1,6 @@
 <template id="evenements">
-    <main class="min-h-screen bg-gray-100 py-12 px-4">
-        <div class="max-w-7xl mx-auto">
+    <main class="h-screen bg-gray-100 py-12 px-4">
+        <div class="max-w-7xl mx-auto h-full flex flex-col">
             
             <!-- Titre -->
             <h2 class="text-blue-dianne-500 text-center mb-12 text-2xl md:text-3xl font-semibold">
@@ -8,7 +8,7 @@
             </h2>
 
             <!-- Barre de recherche et filtres -->
-            <div class="flex flex-col md:flex-row gap-4 mb-12 max-w-4xl mx-auto">
+            <div class="flex flex-col md:flex-row gap-4 mb-12 max-w-4xl w-full mx-auto">
                 <!-- Recherche -->
                 <div class="flex-1 relative">
                     <input 
@@ -32,7 +32,7 @@
             </div>
 
             <!-- Grille d'événements (sera remplie dynamiquement) -->
-            <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12 flex-1 overflow-auto">
                 <!-- Les événements seront injectés ici -->
             </div>
 
@@ -63,8 +63,8 @@
         </div>
         
         <!-- Modal Filtres -->
-        <div id="filterModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-            <div class="bg-gray-100 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div id="filterModal" class="fixed inset-0 z-50 hidden flex items-end justify-end backdrop-blur-xs ease-in-out">
+            <div class="bg-gray-100 rounded-lg max-w-md w-full overflow-y-auto">
 
                 <!-- Header -->
                 <div class="sticky top-0 bg-gray-100 border-b-2 border-burnt-sienna-500 p-6">
@@ -77,10 +77,8 @@
                         </button>
                     </div>
                 </div>
-            
                 <!-- Contenu -->
                 <div class="p-6">
-
                     <!-- Catégories -->
                     <div class="mb-6">
                         <div class="flex items-center justify-between mb-3">
