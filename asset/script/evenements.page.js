@@ -471,7 +471,7 @@ function updatePagination() {
             btn.textContent = i;
             btn.className = `w-10 h-10 rounded-lg font-semibold transition-colors ${
                 i === currentPage 
-                    ? 'bg-white text-blue-dianne-500' 
+                    ? 'border-1 border-burnt-sienna-500 text-white' 
                     : 'bg-transparent text-white hover:bg-blue-dianne-600'
             }`;
             
