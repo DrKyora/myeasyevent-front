@@ -3,7 +3,16 @@ import * as lib from './library.js';
 
 let _deviceSSE = null;
 
-export function init() {
+export async function init() {
+  const session = lib.getCookie('MYEASYEVENT_Session');
+  if (session) {
+    const user = await lib.checkUserLoginStatus();
+    if (user) {
+      lib.appNavigate('/dashboard');
+      return;
+    }
+  }
+
   const form = document.getElementById('loginForm');
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');

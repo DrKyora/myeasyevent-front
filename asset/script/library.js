@@ -9,7 +9,7 @@ switch (true) {
   case window.location.hostname === '127.0.0.1':
   case window.location.hostname === '::1':
   case window.location.hostname === '[::1]':
-    _urlBackend = 'http://localhost/myeasyevent-back/';
+    _urlBackend = 'https://localhost/myeasyevent-back/';
     break;
   default:
     _urlBackend = 'https://myeasyevent.be/myeasyevent-back/';
@@ -171,6 +171,8 @@ export async function tryConnexionWToken() {
         token: deviceToken,
       }),
     });
+
+    console.log(res);
 
     const data = await res.json();
 

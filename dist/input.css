@@ -68,7 +68,7 @@
         to { opacity: 0; }
     }
 
-    button:hover{
+    button:hover, a[role="button"]:hover {
     cursor: pointer;
     font-weight: 400;
     text-shadow: 0 0 1px currentColor;
