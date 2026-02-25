@@ -1,0 +1,25 @@
+<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+    <!-- En-tête avec icône -->
+    <div class="p-6 flex flex-col items-center border-b border-gray-200">
+        <img src="{{deviceIcon}}" class="rounded-full mb-3" width="48" height="48" alt="Device icon">
+        <h6 class="text-lg font-semibold text-gray-900 mb-0">{{deviceName}}</h6>
+    </div>
+    
+    <!-- Corps -->
+    <div class="p-6">
+        <!-- Date dernière utilisation -->
+        <div class="flex items-center justify-center gap-2 text-gray-700">
+            <svg class="w-5 h-5 flex-shrink-0 text-burnt-sienna-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-sm">{{deviceLastUsed}}</span>
+        </div>
+    </div>
+    
+    <!-- Footer avec bouton -->
+    <div class="px-6 pb-6">
+        <button type="button" class="btn-delete-device w-full bg-burnt-sienna-500 px-4 py-2 rounded-lg">
+            Supprimer
+        </button>
+    </div>
+</div>

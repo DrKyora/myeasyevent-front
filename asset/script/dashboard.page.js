@@ -9,6 +9,7 @@ if (typeof moment !== 'undefined') {
 const loadedSections = {
     informations: false,
     events: false,
+    devices: false,
     'gestion-utilisateurs': false,
     'gestion-evenements': false,
     'statistiques': false
@@ -115,11 +116,19 @@ async function loadSection(sectionName) {
             await loadUserEvents();
             loadedSections.events = true;
             break;
-        
+        case 'devices':
+            await loadUserDevices();
+            loadedSections.devices = true;
+            break;
         // ⭐ Sections admin
         case 'gestion-utilisateurs':
             await loadAdminUsers();
             loadedSections['gestion-utilisateurs'] = true;
+            break;
+        
+        case 'gestion-design':
+            await loadAdminDesign();
+            loadedSections['gestion-design'] = true;
             break;
         
         case 'gestion-evenements':
@@ -131,6 +140,61 @@ async function loadSection(sectionName) {
             await loadAdminStats();
             loadedSections['statistiques'] = true;
             break;
+    }
+}
+// Charger les devices associés à l'utilisateur
+async function loadUserDevices() {
+    try {
+        const devicesContainer = document.querySelector("#devicesContainer");
+        
+        if (!devicesContainer) {
+            console.error('Conteneur #devicesContainer non trouvé');
+            return;
+        }
+        
+        // Charger le template de carte device
+        const templateResponse = await fetch('./components/deviceCard.html');
+        const deviceCardTemplate = await templateResponse.text();
+        
+        // Récupérer les devices depuis l'API
+        const response = await fetch(`${lib.urlBackend}API/device.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                action: 'getDevicesOfUser',
+                session: lib.getCookie('MYEASYEVENT_Session'),
+                token: localStorage.getItem('MYEASYEVENT_Token')
+            }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.data?.devices) {
+            const devices = data.data.devices;
+            const currentDeviceId = data.data.currentDeviceId || null;
+            
+            if (devices.length === 0) {
+                devicesContainer.innerHTML = '<p class="text-gray-500 text-center py-8 col-span-full">Aucun appareil enregistré</p>';
+                return;
+            }
+            
+            // Vider le conteneur
+            devicesContainer.innerHTML = '';
+            
+            // Afficher chaque device
+            devices.forEach((device) => {
+                const deviceCard = renderDeviceCard(device, currentDeviceId, deviceCardTemplate);
+                devicesContainer.appendChild(deviceCard);
+            });
+            
+        } else {
+            console.error('Erreur lors du chargement des devices');
+            devicesContainer.innerHTML = '<p class="text-red-500 text-center py-8 col-span-full">Erreur de chargement des appareils</p>';
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        lib.ErrorToast.fire({ title: 'Erreur de chargement des appareils' });
     }
 }
 // Charger les informations de l'utilisateur connecté
@@ -556,6 +620,135 @@ function renderEventCard(event, template) {
         .replace(/{{placesText}}/g, placesText)
         .replace('<div class="bg-white', `<div data-event-id="${event.id}" class="bg-white`);
 }
+/**
+ * Créer une carte device à partir du template
+ */
+function renderDeviceCard(device, currentDeviceId, template) {
+    // Formater la date de dernière utilisation
+    const lastUsed = new Date(device.lastUsed);
+    let lastUsedText = '';
+    
+    if (typeof moment !== 'undefined') {
+        lastUsedText = moment(lastUsed).fromNow();
+    } else {
+        // Fallback si moment.js n'est pas chargé
+        const diff = Date.now() - lastUsed.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        if (days === 0) {
+            lastUsedText = "Aujourd'hui";
+        } else if (days === 1) {
+            lastUsedText = "Il y a 1 jour";
+        } else {
+            lastUsedText = `Il y a ${days} jours`;
+        }
+    }
+    
+    // Remplacer les placeholders dans le template
+    let deviceHtml = template
+        .replace(/{{deviceIcon}}/g, getDeviceIcon(device.model))
+        .replace(/{{deviceName}}/g, device.name || 'Appareil inconnu')
+        .replace(/{{deviceLastUsed}}/g, lastUsedText);
+    
+    // Créer un élément temporaire pour manipuler le HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = deviceHtml;
+    
+    const cardElement = tempDiv.firstElementChild;
+    
+    // Ajouter un badge si c'est l'appareil actuel
+    if (device.id === currentDeviceId) {
+        const badge = document.createElement('div');
+        badge.className = 'absolute top-7 -right-2 bg-burnt-sienna-500 text-white text-xs px-3 py-1 rounded-full font-semibold rotate-45';
+        badge.textContent = 'Cet appareil';
+        cardElement.classList.add('relative');
+        cardElement.appendChild(badge);
+    }
+    
+    // Ajouter l'événement de suppression
+    const deleteBtn = cardElement.querySelector('.btn-delete-device');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const result = await Swal.fire({
+                title: 'Supprimer cet appareil ?',
+                html: device.id === currentDeviceId 
+                    ? "<p>⚠️ <strong>Vous serez déconnecté</strong> après la suppression de cet appareil.</p>"
+                    : "<p>Cette action est irréversible.</p>",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Supprimer',
+                cancelButtonText: 'Annuler'
+            });
+            
+            if (result.isConfirmed) {
+                await deleteDevice(device.id, device.id === currentDeviceId, cardElement);
+            }
+        });
+    }
+    
+    return cardElement;
+}
+/**
+ * Supprime un appareil
+ */
+async function deleteDevice(deviceId, isCurrentDevice, cardElement) {
+    try {
+        const response = await fetch(`${lib.urlBackend}API/device.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                action: 'deleteDevice',
+                session: lib.getCookie('MYEASYEVENT_Session'),
+                deviceId: deviceId,
+            }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            lib.SuccessToast.fire({ title: 'Appareil supprimé avec succès' });
+            
+            // Retirer la carte du DOM
+            cardElement.remove();
+            
+            // Si c'est l'appareil actuel, déconnecter l'utilisateur
+            if (isCurrentDevice) {
+                setTimeout(() => {
+                    lib.logout();
+                }, 1500);
+            }
+        } else {
+            lib.ErrorToast.fire({ title: data.message || 'Erreur lors de la suppression' });
+        }
+    } catch (error) {
+        console.error('Erreur suppression device:', error);
+        lib.ErrorToast.fire({ title: 'Erreur de suppression' });
+    }
+}
+
+/**
+ * Retourne l'icône appropriée selon le modèle d'appareil
+ */
+function getDeviceIcon(model) {
+    const modelLower = model?.toLowerCase() || '';
+    
+    if (modelLower.includes('windows')) {
+        return './asset/img/icon_windows.png';
+    } else if (modelLower.includes('android')) {
+        return './asset/img/icon_android.png';
+    } else if (modelLower.includes('ios') || modelLower.includes('iphone') || modelLower.includes('ipad')) {
+        return './asset/img/icon_ios.png';
+    } else if (modelLower.includes('macos') || modelLower.includes('mac os')) {
+        return './asset/img/icon_mac.png';
+    }
+    return './asset/img/icon_default.png';
+}
+
 // ⭐ ========================================
 //    FONCTIONS ADMIN (protégées backend)
 // ⭐ ========================================

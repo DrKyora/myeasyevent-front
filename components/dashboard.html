@@ -34,6 +34,14 @@
                             <span class="nav-text whitespace-nowrap">Mes événements</span>
                         </button>
                     </li>
+                    <!-- Mes appareils autorisés -->
+                    <li>
+                        <button data-section="devices" class="nav-item w-full flex items-center gap-2 md:gap-4 px-2 py-2 md:py-3 hover:bg-blue-dianne-600 transition-colors relative">
+                            <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-burnt-sienna-500 nav-indicator opacity-0"></div>
+                            <img src="./asset/svgs/device_hub.svg" alt="">
+                            <span class="nav-text whitespace-nowrap">Mes appareils</span>
+                        </button>
+                    </li>
                     <!-- Gestion utilisateurs -->
                     <li>
                         <button data-section="gestion-utilisateurs" data-role="admin" class="nav-item hidden w-full flex items-center gap-2 md:gap-4 px-2 py-2 md:py-3 hover:bg-blue-dianne-600 transition-colors relative">
@@ -200,6 +208,13 @@
                     </svg>
                     <p class="text-gray-600 text-lg">Vous n'avez créé aucun événement pour le moment</p>
                     <p class="text-gray-500 text-sm mt-2">Cliquez sur "Créer un événement" pour commencer</p>
+                </div>
+            </section>
+            <!-- Section des devices -->
+             <section id="section-devices" class="dashboard-section hidden w-full h-full">
+                <!-- Conteneur des cartes de devices -->
+                <div id="devicesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Les cartes seront injectées ici -->
                 </div>
             </section>
             <!-- ⭐ SECTIONS ADMIN -->
