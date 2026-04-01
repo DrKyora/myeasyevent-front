@@ -218,9 +218,63 @@
                 </div>
             </section>
             <!-- ⭐ SECTIONS ADMIN -->
-            <section id="section-gestion-utilisateurs" class="dashboard-section hidden">
-                <h2 class="text-2xl md:text-3xl font-serif italic text-blue-dianne-500 mb-4 md:mb-8">Gestion des utilisateurs</h2>
-                <p class="text-gray-600">Administration des comptes utilisateurs...</p>
+            <section id="section-gestion-utilisateurs" class="dashboard-section hidden w-full h-full">
+                <h2 class="text-2xl md:text-3xl font-serif italic text-blue-dianne-500 mb-6">Liste des utilisateurs</h2>
+
+                <!-- Tableau (visible sur desktop) -->
+                <div class="hidden md:block overflow-x-auto bg-white rounded-lg shadow-lg">
+                    <table class="w-full border-1 border-blue-dianne-500">
+                        <thead>
+                            <tr class="bg-blue-dianne-500 text-white">
+                                <th class="px-4 py-3 text-left text-sm font-semibold">Nom et prénom</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold">Email</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold">Date de validation</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold">Rôle</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold">Compte désactivé</th>
+                                <th class="px-4 py-3 text-right text-sm font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Les lignes seront injectées ici -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-gray-50 border-t border-gray-300">
+                                <td colspan="6">
+                                    <div class="flex items-center justify-between bg-blue-dianne-500 rounded-bottom-lg p-4">
+                                        <button id="prevPageBtn" class="bg-burnt-sienna-500 hover:bg-burnt-sienna-600 text-black px-6 py-3 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                                            </svg>
+                                            <span class="hidden md:inline">Précédent</span>
+                                        </button>
+                                        <div id="pageNumbers" class="flex gap-2">
+                                            <!-- Généré dynamiquement -->
+                                        </div>
+                                        <button id="nextPageBtn" class="bg-burnt-sienna-500 hover:bg-burnt-sienna-600 text-black px-6 py-3 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <span class="hidden md:inline">Suivant</span>
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            
+                <!-- Cards (visible sur mobile) -->
+                <div id="usersCardsContainer" class="md:hidden grid grid-cols-1 gap-4">
+                <!-- Les cards seront injectées ici -->
+                </div>
+            
+                <!-- Message si aucun utilisateur -->
+                <div id="noUsersMessage" class="hidden text-center py-12">
+                    <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20h12a6 6 0 00-6-6 6 6 0 00-6 6z"/>
+                    </svg>
+                    <p class="text-gray-600 text-lg">Aucun utilisateur trouvé</p>
+                </div>
             </section>
 
             <section id="section-statistiques" class="dashboard-section hidden">

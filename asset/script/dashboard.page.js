@@ -757,13 +757,31 @@ async function loadAdminUsers() {
     console.log('Chargement gestion utilisateurs...');
     
     try {
-        const response = await fetch(`${lib.urlBackend}API/admin/users.php`, {
+        const usersTableBody = document.getElementById('usersTableBody');
+        const usersCardsContainer = document.getElementById('usersCardsContainer');
+        const noUsersMessage = document.getElementById('noUsersMessage');
+        
+        if (!usersTableBody || !usersCardsContainer) {
+            console.error('Conteneurs utilisateurs non trouvés');
+            return;
+        }
+        
+        // Charger les templates
+        const rowTemplateResponse = await fetch('./components/userRow.html');
+        const userRowTemplate = await rowTemplateResponse.text();
+        
+        const cardTemplateResponse = await fetch('./components/userCard.html');
+        const userCardTemplate = await cardTemplateResponse.text();
+        
+        // Récupérer les utilisateurs
+        const response = await fetch(`${lib.urlBackend}API/admin/adminUsers.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
                 action: 'getAllUsers',
-                session: lib.getCookie('MYEASYEVENT_Session')
+                session: lib.getCookie('MYEASYEVENT_Session'),
+                token: localStorage.getItem('MYEASYEVENT_Token')
             })
         });
         
@@ -774,13 +792,328 @@ async function loadAdminUsers() {
             return;
         }
         
-        if (data.status === 'success') {
-            console.log('Utilisateurs chargés:', data.data);
-            // TODO: Afficher la liste des utilisateurs
+        if (data.status === 'success' && data.data?.users && data.data.users.length > 0) {
+            console.log('Utilisateurs chargés:', data.data.users);
+            
+            const allUsers = data.data.users;
+            const itemsPerPage = 10;
+            let currentPage = 1;
+            const totalPages = Math.ceil(allUsers.length / itemsPerPage);
+            
+            // Fonction pour afficher une page
+            function displayPage(page) {
+                currentPage = page;
+                const start = (page - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+                const pageUsers = allUsers.slice(start, end);
+                
+                // Afficher les lignes du tableau
+                usersTableBody.innerHTML = pageUsers.map(user => {
+                    return renderUserRow(user, userRowTemplate);
+                }).join('');
+                
+                // Attacher les événements
+                attachUserRowEvents();
+                
+                // Mettre à jour la pagination
+                updatePaginationButtons();
+            }
+            
+            // Fonction pour mettre à jour les boutons de pagination
+            function updatePaginationButtons() {
+                const prevBtn = document.getElementById('prevPageBtn');
+                const nextBtn = document.getElementById('nextPageBtn');
+                const pageNumbers = document.getElementById('pageNumbers');
+
+                // Désactiver/Activer les boutons
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages;
+
+                // Gérer les classes séparément
+                if (currentPage === 1) {
+                    prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+
+                if (currentPage === totalPages) {
+                    nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+
+                // Générer les numéros de page
+                pageNumbers.innerHTML = '';
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement('button');
+                    btn.textContent = i;
+                    btn.className = `w-10 h-10 rounded-lg font-semibold transition-colors ${
+                        i === currentPage 
+                            ? 'border-1 border-burnt-sienna-500 text-white' 
+                            : 'bg-transparent text-white hover:bg-blue-dianne-600'
+            }`;
+                    btn.addEventListener('click', () => displayPage(i));
+                    pageNumbers.appendChild(btn);
+                }
+            }
+            
+            // Afficher les cards (mobile)
+            usersCardsContainer.innerHTML = '';
+            allUsers.forEach(user => {
+                const userCard = renderUserCard(user, userCardTemplate);
+                usersCardsContainer.appendChild(userCard);
+            });
+            attachUserCardEvents();
+            
+            // Afficher la première page
+            displayPage(1);
+            
+            // Événements des boutons précédent/suivant
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            
+            prevBtn?.addEventListener('click', () => {
+                if (currentPage > 1) displayPage(currentPage - 1);
+            });
+            
+            nextBtn?.addEventListener('click', () => {
+                if (currentPage < totalPages) displayPage(currentPage + 1);
+            });
+            
+            // Cacher le message vide
+            noUsersMessage.classList.add('hidden');
+            
+        } else {
+            console.log('Aucun utilisateur trouvé');
+            usersTableBody.innerHTML = '';
+            usersCardsContainer.innerHTML = '';
+            noUsersMessage.classList.remove('hidden');
         }
     } catch (error) {
         console.error('Erreur chargement utilisateurs:', error);
-        lib.ErrorToast.fire({ title: 'Erreur de chargement' });
+        lib.ErrorToast.fire({ title: 'Erreur de chargement des utilisateurs' });
+    }
+}
+
+function renderUserRow(user, template) {
+    const roleBadgeClass = user.isAdmin === true
+        ? 'bg-burnt-sienna-500 text-white' 
+        : 'bg-blue-dianne-500 text-white';
+    
+    const isDeactivated = user.isDeactivated === 1 || user.isDeactivated === true;
+    const deactivatedText = isDeactivated ? 'Oui' : 'Non';
+    const deactivateAction = isDeactivated ? 'Réactiver' : 'Désactiver';
+    const toggleRoleText = user.isAdmin === true ? 'Retirer admin' : 'Promouvoir admin';
+    
+    // Formater la date
+    let validateDate = 'N/A';
+    if (user.validateDate) {
+        if (typeof moment !== 'undefined') {
+            validateDate = moment(user.validateDate).format('DD/MM/YYYY HH:mm');
+        } else {
+            validateDate = new Date(user.validateDate).toLocaleDateString('fr-FR');
+        }
+    }
+    
+    return template
+        .replace(/{{userId}}/g, user.id)
+        .replace(/{{firstName}}/g, user.firstName || '')
+        .replace(/{{lastName}}/g, user.lastName || '')
+        .replace(/{{email}}/g, user.email || '')
+        .replace(/{{validateDate}}/g, validateDate)
+        .replace(/{{role}}/g, user.isAdmin === true ? 'Administrateur' : 'Utilisateur')
+        .replace(/{{roleBadgeClass}}/g, roleBadgeClass)
+        .replace(/{{deactivatedText}}/g, deactivatedText)
+        .replace(/{{deactivateAction}}/g, deactivateAction)
+        .replace(/{{toggleRoleText}}/g, toggleRoleText);
+}
+
+function renderUserCard(user, template) {
+    const roleBadgeClass = user.isAdmin === true 
+        ? 'bg-burnt-sienna-500 text-white' 
+        : 'bg-blue-dianne-500 text-white';
+    
+    const isDeactivated = user.isDeactivated === 1 || user.isDeactivated === true;
+    const deactivatedText = isDeactivated ? 'Oui' : 'Non';  // ✅ Même que renderUserRow()
+    const deactivateAction = isDeactivated ? 'Réactiver' : 'Désactiver';
+    const toggleRoleText = user.isAdmin === true ? 'Retirer admin' : 'Promouvoir admin';
+    
+    // Formater la date
+    let validateDate = 'N/A';
+    if (user.validateDate) {
+        if (typeof moment !== 'undefined') {
+            validateDate = moment(user.validateDate).format('DD/MM/YYYY HH:mm');
+        } else {
+            validateDate = new Date(user.validateDate).toLocaleDateString('fr-FR');
+        }
+    }
+    
+    let cardHtml = template
+        .replace(/{{userId}}/g, user.id)
+        .replace(/{{firstName}}/g, user.firstName || '')
+        .replace(/{{lastName}}/g, user.lastName || '')
+        .replace(/{{email}}/g, user.email || '')
+        .replace(/{{validateDate}}/g, validateDate)
+        .replace(/{{role}}/g, user.isAdmin === true ? 'Administrateur' : 'Utilisateur')
+        .replace(/{{roleBadgeClass}}/g, roleBadgeClass)
+        .replace(/{{deactivatedText}}/g, deactivatedText)
+        .replace(/{{deactivateAction}}/g, deactivateAction)
+        .replace(/{{toggleRoleText}}/g, toggleRoleText);
+    
+    // Créer un élément DOM comme renderDeviceCard()
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = cardHtml;
+    return tempDiv.firstElementChild;
+}
+
+function attachUserRowEvents() {
+    const menuButtons = document.querySelectorAll('.btn-user-menu');
+    
+    menuButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const menu = btn.nextElementSibling;
+            
+            // Fermer les autres menus
+            document.querySelectorAll('.user-menu').forEach(m => {
+                if (m !== menu) m.classList.add('hidden');
+            });
+            
+            menu.classList.toggle('hidden');
+        });
+    });
+    
+    // Fermer les menus au clic en dehors
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.user-menu').forEach(m => m.classList.add('hidden'));
+    });
+    
+    // Boutons Promouvoir/Retirer admin (pour ROWS du tableau)
+    document.querySelectorAll('tr[data-user-id] .btn-toggle-role').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const row = btn.closest('tr');
+            const userId = row.dataset.userId;
+            await toggleUserRole(userId);
+        });
+    });
+    
+    // Boutons Désactiver/Réactiver (pour ROWS du tableau)
+    document.querySelectorAll('tr[data-user-id] .btn-deactivate').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const row = btn.closest('tr');
+            const userId = row.dataset.userId;
+            await toggleUserDeactivation(userId);
+        });
+    });
+}
+
+function attachUserCardEvents() {
+    // Boutons TOGGLE ROLE pour cards
+    document.querySelectorAll('#usersCardsContainer .btn-toggle-role').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const card = btn.closest('[data-user-id]');
+            const userId = card.dataset.userId;
+            await toggleUserRole(userId);
+        });
+    });
+    
+    // Boutons DEACTIVATE pour cards
+    document.querySelectorAll('#usersCardsContainer .btn-deactivate').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const card = btn.closest('[data-user-id]');
+            const userId = card.dataset.userId;
+            await toggleUserDeactivation(userId);
+        });
+    });
+}
+
+async function toggleUserRole(userId) {
+    try {
+        const result = await Swal.fire({
+            title: 'Changer le rôle ?',
+            html: '<p>Êtes-vous sûr de vouloir modifier le rôle de cet utilisateur ?</p>',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2c5aa0',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Confirmer',
+            cancelButtonText: 'Annuler'
+        });
+        
+        if (!result.isConfirmed) return;
+        
+        const response = await fetch(`${lib.urlBackend}API/admin/adminUsers.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                action: 'toggleUserRole',
+                userId: userId,
+                session: lib.getCookie('MYEASYEVENT_Session'),
+                token: localStorage.getItem('MYEASYEVENT_Token')
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            lib.SuccessToast.fire({ title: 'Rôle modifié avec succès' });
+            // Recharger la liste
+            loadedSections['gestion-utilisateurs'] = false;
+            await loadSection('gestion-utilisateurs');
+        } else {
+            lib.ErrorToast.fire({ title: data.message || 'Erreur lors de la modification' });
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        lib.ErrorToast.fire({ title: 'Erreur serveur' });
+    }
+}
+
+async function toggleUserDeactivation(userId) {
+    try {
+        const result = await Swal.fire({
+            title: 'Modifier le statut ?',
+            html: '<p>Êtes-vous sûr de vouloir changer le statut de cet utilisateur ?</p>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Confirmer',
+            cancelButtonText: 'Annuler'
+        });
+        
+        if (!result.isConfirmed) return;
+        
+        const response = await fetch(`${lib.urlBackend}API/admin/adminUsers.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                action: 'toggleUserDeactivation',
+                userId: userId,
+                session: lib.getCookie('MYEASYEVENT_Session'),
+                token: localStorage.getItem('MYEASYEVENT_Token')
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            lib.SuccessToast.fire({ title: 'Statut modifié avec succès' });
+            // Recharger la liste
+            loadedSections['gestion-utilisateurs'] = false;
+            await loadSection('gestion-utilisateurs');
+        } else {
+            lib.ErrorToast.fire({ title: data.message || 'Erreur lors de la modification' });
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        lib.ErrorToast.fire({ title: 'Erreur serveur' });
     }
 }
 
@@ -788,7 +1121,7 @@ async function loadAdminEvents() {
     console.log('Chargement gestion événements...');
     
     try {
-        const response = await fetch(`${lib.urlBackend}API/admin/events.php`, {
+        const response = await fetch(`${lib.urlBackend}API/admin/adminEvents.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -819,7 +1152,7 @@ async function loadAdminStats() {
     console.log('Chargement statistiques...');
     
     try {
-        const response = await fetch(`${lib.urlBackend}API/admin/stats.php`, {
+        const response = await fetch(`${lib.urlBackend}API/admin/adminStats.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -845,6 +1178,7 @@ async function loadAdminStats() {
         lib.ErrorToast.fire({ title: 'Erreur de chargement' });
     }
 }
+
 export async function unmount() {
     console.log('Sortie du dashboard - reset onglet actif');
     localStorage.removeItem('dashboardActiveTab');

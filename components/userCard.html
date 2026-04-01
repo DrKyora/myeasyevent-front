@@ -1,0 +1,45 @@
+<div class="bg-white text-blue-dianne-500 rounded-lg shadow-lg p-4 border-l-4 border-blue-dianne-500" data-user-id="{{userId}}">
+    <!-- Header -->
+    <div class="flex justify-between items-start pb-3 border-b border-burnt-sienna-500 mb-4">
+        <div>
+            <p>{{lastName}} {{firstName}}</p>
+        </div>
+        <div class="relative">
+            <button class="btn-user-menu text-burnt-sienna-500 hover:text-burnt-sienna-700">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+            </button>
+            <div class="user-menu hidden absolute right-0 mt-2 w-48 bg-blue-dianne-500 rounded-lg z-10 text-white">
+                <button class="btn-toggle-role w-full text-left px-4 py-2 text-sm">
+                    {{toggleRoleText}}
+                </button>
+                <button class="btn-deactivate w-full text-left px-4 py-2 text-sm">
+                    {{deactivateAction}}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Infos -->
+    <div class="space-y-2 text-sm mb-4">
+        <!-- Email -->
+        <p>
+            <span>{{email}}</span>
+        </p>
+
+        <!-- Date validation -->
+        <p>
+            <span>{{validateDate}}</span>
+            <span class="px-2 py-1 rounded-full text-xs font-semibold {{roleBadgeClass}}">
+            {{role}}
+        </span>
+        </p>
+
+        <!-- Statut déactivé -->
+        <div class="flex items-center space-x-2">
+            <span>Compte désactivé :</span>
+            <span>{{deactivatedText}}</span>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,30 @@
+<tr class="border-1 border-blue-dianne-500 transition-colors" data-user-id="{{userId}}">
+    <td class="px-4 py-3 text-sm font-medium text-blue-dianne-500">{{firstName}} {{lastName}}</td>
+    <td class="px-4 py-3 text-sm text-blue-dianne-500">{{email}}</td>
+    <td class="px-4 py-3 text-sm text-blue-dianne-500">{{validateDate}}</td>
+    <td class="px-4 py-3 text-sm">
+        <span class="px-2 py-1 rounded-full text-xs font-semibold {{roleBadgeClass}}">
+            {{role}}
+        </span>
+    </td>
+    <td class="px-4 py-3 text-sm text-center">
+        <span class="{{deactivatedClass}}">{{deactivatedText}}</span>
+    </td>
+    <td class="px-4 py-3 text-right">
+        <div class="relative inline-block index-10">
+            <button class="btn-user-menu text-burnt-sienna-500 hover:text-burnt-sienna-700 p-2" title="Opérations">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+            </button>
+            <div class="user-menu hidden absolute right-0 mt-2 w-48 bg-blue-dianne-500 rounded-lg z-10 text-white">
+                <button class="btn-toggle-role w-full text-left px-4 py-2 text-sm">
+                    {{toggleRoleText}}
+                </button>
+                <button class="btn-deactivate w-full text-left px-4 py-2 text-sm">
+                    {{deactivateAction}}
+                </button>
+            </div>
+        </div>
+    </td>
+</tr>
