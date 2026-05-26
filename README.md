@@ -10,7 +10,7 @@ Information Login/MDP | Pour les logins/MDP, inutile que je vous les donne, car 
 ||
 Information Lancement en local | Le projet, vous pouvez tenter de le faire tourner en local, mais cela ne fonctionnera pas étant donné qu’il n’y a pas de clé API sur GitHub.
 ||
-Trello | Pour le trello, je l'avais fait dans la partie projet de github de mon back, mais en voulais le remettre ici, je ne sais pas pourquoi il n'est plus présent dans mon github, veuillez m'en excusez.
+Trello | Pour le trello, je l'avais fait dans la partie projet de github de mon back, mais en voulant le remettre ici, je ne sais pas pourquoi il n'est plus présent dans mon github, veuillez m'en excusez.
 ||
 Analyse Fonctionnelle | [Mon analyse fonctionnelle](https://docs.google.com/document/d/169kBSdCLDjrNYJuEJ_Ba7jGp4Ai6XzTAFwYmrLxcqO8/edit?usp=sharing)
 ||
