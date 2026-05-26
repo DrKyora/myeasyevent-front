@@ -12,6 +12,8 @@ Information Lancement en local | Le projet, vous pouvez tenter de le faire tourn
 ||
 Trello | Pour le trello, je l'avais fait dans la partie projet de github de mon back, mais en voulant le remettre ici, je ne sais pas pourquoi il n'est plus présent dans mon github, veuillez m'en excusez.
 ||
+Info Guillaume | J'ai supprimer l'utilisateur que tu avais créer comme sa tu pourras le recréer.
+||
 Analyse Fonctionnelle | [Mon analyse fonctionnelle](https://docs.google.com/document/d/169kBSdCLDjrNYJuEJ_Ba7jGp4Ai6XzTAFwYmrLxcqO8/edit?usp=sharing)
 ||
 Analyse Business | [Mon analyse business](https://docs.google.com/document/d/1-tmNpUBGsrLpYGEF4G835aULl-27UiSQEntmIYexqts/edit?usp=sharing)

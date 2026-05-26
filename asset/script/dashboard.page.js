@@ -457,7 +457,12 @@ function initSidebarToggle() {
         sidebarHeader.style.justifyContent = 'center';
         sidebarTitle.style.display = 'none';
         navTexts.forEach(text => text.style.display = 'none');
+        sidebar.classList.remove('absolute', 'z-11');
+    } else {
+    if (window.innerWidth < 768) {
+        sidebar.classList.add('absolute', 'z-11');
     }
+}
     
     setTimeout(() => {
         sidebar.style.transition = '';
@@ -472,6 +477,9 @@ function initSidebarToggle() {
             sidebar.style.width = '300px';
             sidebar.style.paddingLeft = '';
             sidebar.style.paddingRight = '';
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('absolute', 'z-11');
+            }
             toggleIcon.style.transform = 'rotate(0deg)';
             sidebarHeader.style.justifyContent = 'space-between';
             
@@ -493,6 +501,7 @@ function initSidebarToggle() {
                 sidebar.style.width = '40px';
                 sidebar.style.paddingLeft = '0';
                 sidebar.style.paddingRight = '0';
+                sidebar.classList.remove('absolute', 'z-11');
                 toggleIcon.style.transform = 'rotate(180deg)';
                 sidebarHeader.style.justifyContent = 'center';
             }, 150);
@@ -506,15 +515,13 @@ function initNavigation() {
     navItems.forEach(item => {
         item.addEventListener('click', async () => {
             const sectionName = item.dataset.section;
-            
-            // ✅ Sauvegarder l'onglet actif
             localStorage.setItem('dashboardActiveTab', sectionName);
-            
-            // Mettre à jour l'UI
             setActiveTab(sectionName);
-            
-            // Charger la section
             await loadSection(sectionName);
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth < 768 && sidebar.classList.contains('absolute')) {
+                document.getElementById('toggleSidebar')?.click();
+            }
         });
     });
 }
