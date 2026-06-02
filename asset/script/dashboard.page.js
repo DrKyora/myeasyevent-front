@@ -297,6 +297,7 @@ async function loadUserEvents() {
                 card.addEventListener('click', () => {
                     const eventId = card.getAttribute('data-event-id');
                     console.log('Événement cliqué:', eventId);
+                    window.navigate(`/event-detail?id=${eventId}`);  // ✅ Ajoute cette ligne
                 });
             });
         } else {
@@ -757,7 +758,7 @@ function getDeviceIcon(model) {
 }
 
 // ⭐ ========================================
-//    FONCTIONS ADMIN (protégées backend)
+//                    ADMIN ALL
 // ⭐ ========================================
 
 async function loadAdminUsers() {
@@ -901,7 +902,9 @@ async function loadAdminUsers() {
         lib.ErrorToast.fire({ title: 'Erreur de chargement des utilisateurs' });
     }
 }
-
+//
+// Admin function USER
+//
 function renderUserRow(user, template) {
     const roleBadgeClass = user.isAdmin === true
         ? 'bg-burnt-sienna-500 text-white' 
@@ -1123,7 +1126,9 @@ async function toggleUserDeactivation(userId) {
         lib.ErrorToast.fire({ title: 'Erreur serveur' });
     }
 }
-
+//
+// Admin function EVENT
+//
 async function loadAdminEvents() {
     console.log('Chargement gestion événements...');
     
@@ -1154,7 +1159,9 @@ async function loadAdminEvents() {
         lib.ErrorToast.fire({ title: 'Erreur de chargement' });
     }
 }
-
+//
+// Admin function STATS
+//
 async function loadAdminStats() {
     console.log('Chargement statistiques...');
     
@@ -1164,25 +1171,69 @@ async function loadAdminStats() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
-                action: 'getStats',
+                action: 'getAllStats',
                 session: lib.getCookie('MYEASYEVENT_Session')
             })
         });
         
         const data = await response.json();
         
-        if (response.status === 403) {
-            lib.ErrorToast.fire({ title: '⛔ Accès refusé : droits admin requis' });
-            return;
-        }
-        
-        if (data.status === 'success') {
-            console.log('Statistiques chargées:', data.data);
-            // TODO: Afficher les graphiques/stats
+        if (data.status === 'success' && data.data?.stats) {
+            console.log('Statistiques chargées:', data.data.stats);
+            await displayStatistics(data.data.stats);
+        }else{
+            lib.ErrorToast.fire({ title: data.message || 'Erreur lors du chargement des statistiques' });
         }
     } catch (error) {
         console.error('Erreur chargement stats:', error);
         lib.ErrorToast.fire({ title: 'Erreur de chargement' });
+    }
+}
+
+async function displayStatistics(stats) {
+    try {
+        console.log('Affichage des statistiques:', stats);
+        const response = await fetch('./components/statCard.html');
+        const template = await response.text();
+        
+        const statsCardsContainer = document.getElementById('statsCardsContainer');
+        if (!statsCardsContainer) {
+            console.error('Conteneur statsCardsContainer non trouvé');
+            return;
+        }
+        
+        statsCardsContainer.innerHTML = '';
+        
+        const svgMapping = {
+            'numberOfUsers': './asset/svgs/gestion_user.svg',
+            'numberOfEvents': './asset/svgs/calendar-event.svg',
+            'numberOfReservations': './asset/svgs/stat_reservation.svg',
+        };
+        
+        const labelMapping = {
+            'numberOfUsers': 'Nombre d\'utilisateur inscrit',
+            'numberOfEvents': 'Nombre d\'événement créer',
+            'numberOfReservations': 'Nombre de réservation',
+        };
+        
+        Object.entries(stats).forEach(([key, value]) => {
+            let svgPath = svgMapping[key] || './asset/svgs/gestion_stats.svg';
+            let label = labelMapping[key] || key;
+            
+            console.log(value, label)
+            const cardHtml = template
+                .replace(/{{svgPath}}/g, svgPath)
+                .replace(/{{value}}/g, value)
+                .replace(/{{label}}/g, label);
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = cardHtml;
+            statsCardsContainer.appendChild(tempDiv.firstElementChild);
+        });
+        
+    } catch (error) {
+        console.error('Erreur affichage statistiques:', error);
+        lib.ErrorToast.fire({ title: 'Erreur d\'affichage des statistiques' });
     }
 }
 

@@ -301,7 +301,6 @@ function initEditorHandlers() {
     });
 }
 
-// ✅ Fonction de validation d'adresse avec Google API
 async function validateAddressWithGoogle() {
     const statusEl = document.getElementById('addressValidationStatus');
     const btnValidate = document.getElementById('btnValidateAddress');
@@ -335,8 +334,8 @@ async function validateAddressWithGoogle() {
         const data = await response.json();
         console.log('Validation adresse:', data);
         
-        if (data.status === 'success' && data.data?.validation?.result?.verdict?.addressComplete) {
-            const validatedAddress = data.data.validation.result.address.postalAddress;
+        if (data.status === 'success') {
+            const validatedAddress = data.data.result.address.postalAddress;  // ✅ Corrigé: pas de .validation
             
             if (validatedAddress.addressLines && validatedAddress.addressLines[0]) {
                 const parts = validatedAddress.addressLines[0].split(' ');
