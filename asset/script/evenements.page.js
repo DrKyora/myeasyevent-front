@@ -1,4 +1,4 @@
-import * as lib from './library.js';
+﻿import * as lib from './library.js';
 
 if (typeof moment !== 'undefined') {
     moment.locale('fr');
@@ -10,10 +10,24 @@ let filteredEvents = [];
 let currentPage = 1;
 const eventsPerPage = 12;
 let eventCardTemplate = '';
+let viewMode = 'list';
+let mapInstance = null;
+let mapInfoWindow = null;
+let mapScriptPromise = null;
+let googleMapsMapId = null;
+let mapGeocoder = null;
+let mapMarkers = [];
+let geocodeCache = new Map();
 
 export async function init() {
     console.log('Page Événements initialisée !');
     
+    viewMode = 'list';
+    // Réinitialiser la carte (elle peut persister du dernier passage)
+    mapInstance = null;
+    mapInfoWindow = null;
+    mapMarkers = [];
+    geocodeCache.clear();
     // Charger le template
     await loadTemplate();
     
@@ -21,6 +35,7 @@ export async function init() {
     initFilterModal();
     initSearch();
     initPagination();
+    initViewToggle();
     
     // Charger les événements
     await loadEvents();
@@ -120,19 +135,48 @@ function updateURL(filters) {
     window.history.pushState({}, '', newURL);
 }
 
-// Afficher les événements
+// Afficher les événements (liste ou carte selon le mode)
 function renderEvents() {
+    const listSection = document.getElementById('eventsListSection');
+    const mapSection = document.getElementById('eventsMapSection');
+    const pagination = document.getElementById('eventsPagination');
+
+    if (listSection) {
+        listSection.classList.toggle('hidden', viewMode !== 'list');
+    }
+
+    if (pagination) {
+        pagination.classList.toggle('hidden', viewMode !== 'list');
+    }
+
+    if (mapSection) {
+        mapSection.classList.toggle('hidden', viewMode !== 'map');
+    }
+
+    syncViewToggleButtons();
+
+    if (viewMode === 'map') {
+        renderMapView();
+        return;
+    }
+
+    renderListEvents();
+}
+
+// Afficher les événements en liste
+function renderListEvents() {
     const grid = document.getElementById('eventsGrid');
-    
-    // Calculer les événements à afficher
+
+    if (!grid) {
+        return;
+    }
+
     const startIndex = (currentPage - 1) * eventsPerPage;
     const endIndex = startIndex + eventsPerPage;
     const eventsToShow = filteredEvents.slice(startIndex, endIndex);
-    
-    // Vider la grille
+
     grid.innerHTML = '';
-    
-    // Si aucun événement
+
     if (eventsToShow.length === 0) {
         const noResults = document.createElement('div');
         noResults.className = 'col-span-full text-center py-12 flex items-center justify-center';
@@ -144,14 +188,330 @@ function renderEvents() {
         updatePagination();
         return;
     }
-    
-    // Créer les cartes
+
     eventsToShow.forEach(event => {
         const cardElement = createEventCardFromTemplate(event);
         grid.appendChild(cardElement);
     });
-    
+
     updatePagination();
+}
+
+// ')àp^"(')z'ialiser le toggle list/carte
+function initViewToggle() {
+    const listViewBtn = document.getElementById('listViewBtn');
+    const mapViewBtn = document.getElementById('mapViewBtn');
+
+    listViewBtn?.addEventListener('click', () => {
+        if (viewMode !== 'list') {
+            viewMode = 'list';
+            renderEvents();
+        }
+    });
+
+    mapViewBtn?.addEventListener('click', () => {
+        if (viewMode !== 'map') {
+            viewMode = 'map';
+            renderEvents();
+        }
+    });
+
+    syncViewToggleButtons();
+}
+
+// Synchroniser l'apparence des boutons toggle
+function syncViewToggleButtons() {
+    const listViewBtn = document.getElementById('listViewBtn');
+    const mapViewBtn = document.getElementById('mapViewBtn');
+
+    if (listViewBtn) {
+        listViewBtn.classList.toggle('bg-blue-dianne-500', viewMode === 'list');
+        listViewBtn.classList.toggle('text-white', viewMode === 'list');
+        listViewBtn.classList.toggle('text-blue-dianne-500', viewMode !== 'list');
+    }
+
+    if (mapViewBtn) {
+        mapViewBtn.classList.toggle('bg-blue-dianne-500', viewMode === 'map');
+        mapViewBtn.classList.toggle('text-white', viewMode === 'map');
+        mapViewBtn.classList.toggle('text-blue-dianne-500', viewMode !== 'map');
+    }
+}
+
+// Afficher les événements sur la carte
+async function renderMapView() {
+    const mapElement = document.getElementById('eventsMap');
+    const mapStatus = document.getElementById('mapStatus');
+
+    if (!mapElement || !mapStatus) {
+        return;
+    }
+
+    // Charger Google Maps si pas déjà chargé
+    const apiReady = await ensureGoogleMapsLoaded();
+    if (!apiReady || !window.google?.maps) {
+        mapStatus.textContent = 'La carte Google Maps nécessite une clé API. Veuillez configurer la clé dans le backend.';
+        return;
+    }
+
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));  // 2 frames pour que le DOM soit prêt
+
+    // S'assurer que le conteneur a une hauteur explicite (Google Maps l'exige)
+    if (mapElement.offsetHeight === 0 || !mapElement.style.height) {
+        mapElement.style.height = '600px';
+    }
+
+
+    if (!mapInstance) {
+        mapInstance = new google.maps.Map(mapElement, {
+            center: { lat: 48.8566, lng: 2.3522 },
+            zoom: 5,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            mapId: googleMapsMapId || undefined,
+        });
+        mapInfoWindow = new google.maps.InfoWindow();
+    } else {
+        // Réappliquer la hauteur si elle a été perdue
+        if (mapElement.offsetHeight === 0 || !mapElement.style.height) {
+            mapElement.style.height = '600px';
+        }
+        google.maps.event.trigger(mapInstance, 'resize');
+    }
+
+    clearMapMarkers();
+
+    const eventsToShow = [...filteredEvents];
+
+    if (eventsToShow.length === 0) {
+        mapStatus.textContent = 'Aucun événement à afficher sur la carte.';
+        mapInstance.setCenter({ lat: 48.8566, lng: 2.3522 });
+        mapInstance.setZoom(5);
+        return;
+    }
+
+    mapStatus.textContent = 'Géocodage des événements...';
+
+    const markerData = await Promise.all(eventsToShow.map(async event => {
+        const addressLabel = formatAddress(event.address);
+        const location = await geocodeEventAddress(event, addressLabel);
+        return location ? { event, location, addressLabel } : null;
+    }));
+
+    const validMarkers = markerData.filter(Boolean);
+
+    if (validMarkers.length === 0) {
+        mapStatus.textContent = 'Impossible de positionner les événements sur la carte.';
+        mapInstance.setCenter({ lat: 48.8566, lng: 2.3522 });
+        mapInstance.setZoom(5);
+        return;
+    }
+const bounds = new google.maps.LatLngBounds();
+
+    validMarkers.forEach(({ event, location, addressLabel }) => {
+        const marker = new google.maps.marker.AdvancedMarkerElement({
+            map: mapInstance,
+            position: location,
+            title: event.title,
+        });
+
+        marker.addEventListener('gmp-click', () => {
+            mapInfoWindow.setContent(buildMarkerContent(event, addressLabel));
+            mapInfoWindow.open({ map: mapInstance, anchor: marker });
+        });
+
+        mapMarkers.push(marker);
+        bounds.extend(location);
+    });
+
+    if (validMarkers.length === 1) {
+        mapInstance.setCenter(validMarkers[0].location);
+        mapInstance.setZoom(12);
+    } else {
+        mapInstance.fitBounds(bounds);
+    }
+
+    mapStatus.textContent = `${validMarkers.length} événement(s) positionné(s) sur la carte.`;
+}
+
+// Nettoyer les marqueurs de la carte
+function clearMapMarkers() {
+    mapMarkers.forEach(marker => {
+        if (typeof marker.setMap === 'function') {
+            marker.setMap(null);
+            return;
+        }
+
+        marker.map = null;
+    });
+    mapMarkers = [];
+}
+
+// Charger le script Google Maps avec clé depuis le backend
+async function ensureGoogleMapsLoaded() {
+    if (window.google?.maps) {
+        return true;
+    }
+
+    if (!mapScriptPromise) {
+        mapScriptPromise = new Promise(async (resolve, reject) => {
+            try {
+                const apiKey = await getGoogleMapsApiKeyFromBackend();
+
+                if (!apiKey) {
+                    reject(new Error('Clé API Google Maps non disponible'));
+                    return;
+                }
+
+                const callbackName = '__myeasyeventMapsInit';
+
+                // Evite les collisions si la fonction existe déjà
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                }
+
+                window[callbackName] = () => {
+                    delete window[callbackName];
+                    resolve(true);
+                };
+
+                const script = document.createElement('script');
+                script.src =
+                    'https://maps.googleapis.com/maps/api/js'
+                    + '?key=' + encodeURIComponent(apiKey)
+                    + '&v=weekly'
+                    + '&libraries=marker'
+                    + '&loading=async'
+                    + '&callback=' + callbackName;
+
+                script.async = true;
+                script.defer = false;  // Important: ne pas utiliser defer avec callback async
+
+                script.onerror = () => {
+                    if (window[callbackName]) {
+                        delete window[callbackName];
+                    }
+                    mapScriptPromise = null;
+                    reject(new Error('Impossible de charger Google Maps'));
+                };
+
+                document.head.appendChild(script);
+            } catch (error) {
+                mapScriptPromise = null;
+                reject(error);
+            }
+        });
+    }
+
+    try {
+        await mapScriptPromise;
+        return !!window.google?.maps;
+    } catch (error) {
+        console.error('Erreur chargement Google Maps:', error);
+        return false;
+    }
+}
+
+// Récupérer la clé API depuis le backend
+async function getGoogleMapsApiKeyFromBackend() {
+    try {
+        const session = lib.getCookie('MYEASYEVENT_Session');
+        
+        const response = await fetch(`${lib.urlBackend}API/addressValidation.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                action: 'getGoogleMapsApiKey',
+                session: session
+            }),
+        });
+        const data = await response.json();
+
+        if (data.status === 'success' && data.data?.apiKey) {
+            googleMapsMapId = data.data?.mapId || null;
+            return data.data.apiKey;
+        }
+    } catch (error) {
+        console.error('Erreur récupération clé API:', error);
+    }
+
+    return null;
+}
+
+// Obtenir le code région depuis le pays
+function getRegionCode(country) {
+    const value = (country || '').toString().trim().toLowerCase();
+    if (value.includes('belg')) return 'be';
+    if (value.includes('fr')) return 'fr';
+    return '';
+}
+
+// Géocoder une adresse via le backend
+async function geocodeEventAddress(event, addressLabel) {
+    const normalizedAddress = (addressLabel || '').trim();
+
+    if (!normalizedAddress || normalizedAddress === 'Adresse non disponible') {
+        return null;
+    }
+
+    const cacheKey = `${normalizedAddress}|${event?.address?.country || ''}`;
+
+    if (geocodeCache.has(cacheKey)) {
+        return geocodeCache.get(cacheKey);
+    }
+
+    try {
+        const session = lib.getCookie('MYEASYEVENT_Session');
+        
+        const response = await fetch(`${lib.urlBackend}API/addressValidation.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                action: 'geocodeAddress',
+                address: normalizedAddress,
+                regionCode: getRegionCode(event?.address?.country) || 'FR',
+                streetNumber: event?.address?.streetNumber || '',
+                street: event?.address?.street || '',
+                zipCode: event?.address?.zipCode || '',
+                city: event?.address?.city || '',
+                country: event?.address?.country || '',
+                session: session
+            }),
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success' && data.data?.lat && data.data?.lng) {
+            const location = { lat: data.data.lat, lng: data.data.lng };
+            geocodeCache.set(cacheKey, location);
+            return location;
+        }
+    } catch (error) {
+        console.error('Erreur géocodage:', error);
+    }
+
+    return null;
+}
+
+// Créer le contenu d'une infowindow sur la carte
+function buildMarkerContent(event, addressLabel) {
+    const title = escapeHtml(event.title || 'Événement');
+    const place = escapeHtml(addressLabel || 'Adresse non disponible');
+    const startDate = escapeHtml(formatDate(event.startDate));
+    const endDate = escapeHtml(formatDate(event.endDate));
+
+    return `
+        <div class="max-w-xs p-2">
+            <h3 class="text-lg font-semibold text-blue-dianne-500 mb-1">${title}</h3>
+            <p class="text-sm text-gray-600 mb-1">${place}</p>
+            <p class="text-sm text-gray-500 mb-3">Du ${startDate} au ${endDate}</p>
+            <a href="/event-detail?id=${encodeURIComponent(event.id)}" class="inline-flex items-center rounded-lg bg-burnt-sienna-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-burnt-sienna-600">
+                Voir le détail
+            </a>
+        </div>
+    `;
 }
 
 // Créer une carte d'événement à partir du template
@@ -190,7 +550,7 @@ function createEventCardFromTemplate(event) {
     // Ajouter le listener pour le clic
     cardElement.addEventListener('click', () => {
         console.log('Clic sur événement:', event.id);
-        window.navigate(`/event-detail?id=${event.id}`); // ✅ Navigation vers détails
+        window.navigate(`/event-detail?id=${event.id}`);
     });
     
     return cardElement;
@@ -209,7 +569,6 @@ function formatDate(dateString) {
     if (typeof moment !== 'undefined') {
         return moment(dateString).format('DD/MM/YYYY');
     } else {
-        // Fallback si moment.js n'est pas chargé
         const date = new Date(dateString);
         return date.toLocaleDateString('fr-FR', { 
             day: '2-digit', 
@@ -225,22 +584,19 @@ function formatAddress(address) {
     
     const parts = [];
     
-    // Rue et numéro
     if (address.street) {
-        const street = address.streetNumber  // ✅ CORRIGÉ : streetNumber au lieu de streetNumer
-            ? `${address.street} ${address.streetNumber}`
+        const street = address.streetNumber
+            ? `${address.streetNumber} ${address.street}`
             : address.street;
         parts.push(street);
     }
     
-    // Code postal et ville
     if (address.zipCode && address.city) {
         parts.push(`${address.zipCode} ${address.city}`);
     } else if (address.city) {
         parts.push(address.city);
     }
     
-    // Pays
     if (address.country) {
         parts.push(address.country);
     }
@@ -313,10 +669,10 @@ function initFilterModal() {
         document.getElementById('distanceFilter').value = 0;
         if (distanceValue) distanceValue.textContent = '0 km';
         
-        // Effacer l'URL et réafficher tous les événements
         window.history.pushState({}, '', window.location.pathname);
         filteredEvents = [...allEvents];
         currentPage = 1;
+        renderEvents();
     });
     
     applyFilters?.addEventListener('click', () => {
@@ -328,7 +684,7 @@ function initFilterModal() {
             search: document.getElementById('searchEvents')?.value || ''
         };
         
-        applyEventFilters(filters, true); // true = mettre à jour l'URL
+        applyEventFilters(filters, true);
         closeModal();
         lib.SuccessToast.fire({ title: 'Filtres appliqués' });
     });
@@ -337,7 +693,6 @@ function initFilterModal() {
 // Appliquer les filtres
 function applyEventFilters(filters, updateURLFlag = true) {
     filteredEvents = allEvents.filter(event => {
-        // Filtre par recherche
         if (filters.search) {
             const searchTerm = filters.search.toLowerCase();
             const matchSearch = 
@@ -349,7 +704,6 @@ function applyEventFilters(filters, updateURLFlag = true) {
             if (!matchSearch) return false;
         }
         
-        // Filtre par âge
         if (filters.age !== 'all') {
             const requiredAge = parseInt(filters.age);
             const eventAge = parseInt(event.ageRestriction) || 0;
@@ -359,8 +713,6 @@ function applyEventFilters(filters, updateURLFlag = true) {
             }
         }
         
-        // Filtre par date
-                // Filtre par date
         if (filters.date) {
             if (typeof moment !== 'undefined') {
                 const filterDate = moment(filters.date);
@@ -371,7 +723,6 @@ function applyEventFilters(filters, updateURLFlag = true) {
                     return false;
                 }
             } else {
-                // Fallback sans moment.js
                 const filterDate = new Date(filters.date);
                 const eventStart = new Date(event.startDate);
                 const eventEnd = new Date(event.endDate);
@@ -381,8 +732,7 @@ function applyEventFilters(filters, updateURLFlag = true) {
                 }
             }
         }
-                
-        // Filtre par catégorie
+        
         if (filters.category && filters.category !== '') {
             if (event.category && event.category.toLowerCase() !== filters.category.toLowerCase()) {
                 return false;
@@ -394,7 +744,6 @@ function applyEventFilters(filters, updateURLFlag = true) {
     
     currentPage = 1;
     
-    // Mettre à jour l'URL si demandé
     if (updateURLFlag) {
         updateURL(filters);
     }
@@ -408,12 +757,8 @@ function initSearch() {
     
     searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value.trim();
-        
-        // Récupérer les filtres actuels
         const filters = getFiltersFromURL();
         filters.search = searchTerm;
-        
-        // Appliquer les filtres avec la recherche
         applyEventFilters(filters, true);
     });
 }
@@ -440,9 +785,12 @@ function initPagination() {
         }
     });
 }
-
 // Mettre à jour l'affichage de la pagination
 function updatePagination() {
+    if (viewMode === 'map') {
+        return;
+    }
+
     const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
     const paginationNumbers = document.getElementById('paginationNumbers');
     const prevBtn = document.getElementById('prevPage');
