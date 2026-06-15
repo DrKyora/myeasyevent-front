@@ -18,6 +18,7 @@ let googleMapsMapId = null;
 let mapGeocoder = null;
 let mapMarkers = [];
 let geocodeCache = new Map();
+let userLocation = lib.getSavedLocation();
 
 export async function init() {
     console.log('Page Événements initialisée !');
@@ -197,7 +198,7 @@ function renderListEvents() {
     updatePagination();
 }
 
-// ')àp^"(')z'ialiser le toggle list/carte
+// Initialiser le toggle list/carte
 function initViewToggle() {
     const listViewBtn = document.getElementById('listViewBtn');
     const mapViewBtn = document.getElementById('mapViewBtn');
@@ -306,7 +307,7 @@ async function renderMapView() {
         mapInstance.setZoom(5);
         return;
     }
-const bounds = new google.maps.LatLngBounds();
+    const bounds = new google.maps.LatLngBounds();
 
     validMarkers.forEach(({ event, location, addressLabel }) => {
         const marker = new google.maps.marker.AdvancedMarkerElement({
@@ -417,7 +418,7 @@ async function getGoogleMapsApiKeyFromBackend() {
     try {
         const session = lib.getCookie('MYEASYEVENT_Session');
         
-        const response = await fetch(`${lib.urlBackend}API/addressValidation.php`, {
+        const response = await fetch(`${lib.urlBackend}API/googleMaps.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -464,7 +465,7 @@ async function geocodeEventAddress(event, addressLabel) {
     try {
         const session = lib.getCookie('MYEASYEVENT_Session');
         
-        const response = await fetch(`${lib.urlBackend}API/addressValidation.php`, {
+        const response = await fetch(`${lib.urlBackend}API/googleMaps.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -516,9 +517,13 @@ function buildMarkerContent(event, addressLabel) {
 
 // Créer une carte d'événement à partir du template
 function createEventCardFromTemplate(event) {
+    const imageUrl = event.images && event.images.length > 0 
+            ? `${lib.urlBackend}img/events/512/${event.images[0].fileName}.webp`
+            : './asset/img/student.jpg';
     const startDate = formatDate(event.startDate);
     const endDate = formatDate(event.endDate);
-    const availablePlaces = event.maxReservation - (event.reservation || 0);
+    const nbReservations = Array.isArray(event.reservations) ? event.reservations.length : 0;
+    const placesDisponibles = event.maxReservation - nbReservations;
     
     // Formater l'adresse
     const formattedAddress = formatAddress(event.address);
@@ -527,12 +532,12 @@ function createEventCardFromTemplate(event) {
     const ageBadge = getAgeBadgeHTML(event.ageRestriction);
     
     // Déterminer les classes et texte des places
-    const placesClass = availablePlaces > 0 ? 'text-green-600' : 'text-red-600';
-    const placesText = availablePlaces > 0 ? `${availablePlaces} place(s) disponible(s)` : 'Complet';
+    const placesClass = placesDisponibles > 0 ? 'text-green-600' : 'text-red-600';
+    const placesText = placesDisponibles > 0 ? `${placesDisponibles} place(s) disponible(s)` : 'Complet';
     
     // Remplacer les placeholders
     let cardHTML = eventCardTemplate
-        .replace(/{{image}}/g, './asset/img/student.jpg')
+        .replace(/{{image}}/g, imageUrl)
         .replace(/{{ageBadge}}/g, ageBadge)
         .replace(/{{title}}/g, escapeHtml(event.title))
         .replace(/{{userName}}/g, escapeHtml(event.userName))
@@ -550,7 +555,7 @@ function createEventCardFromTemplate(event) {
     // Ajouter le listener pour le clic
     cardElement.addEventListener('click', () => {
         console.log('Clic sur événement:', event.id);
-        window.navigate(`/event-detail?id=${event.id}`);
+        window.navigate(`/event-detail?id=${event.id}&from=events`);
     });
     
     return cardElement;
@@ -558,10 +563,13 @@ function createEventCardFromTemplate(event) {
 
 // Obtenir le HTML du badge d'âge
 function getAgeBadgeHTML(ageRestriction) {
-    if (!ageRestriction || ageRestriction === 0) {
-        return '<span class="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">Tout public</span>';
-    }
-    return `<span class="absolute top-4 right-4 bg-burnt-sienna-500 text-white text-xs font-bold px-3 py-1 rounded-full">+${ageRestriction}</span>`;
+    const ageBadges = {
+        0: '<span class="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">Tout public</span>',
+        12: '<span class="absolute top-4 right-4 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">12+</span>',
+        16: '<span class="absolute top-4 right-4 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">16+</span>',
+        18: '<span class="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">18+</span>'
+    };
+    return ageBadges[ageRestriction] || ageBadges[0];
 }
 
 // Formater une date avec Moment.js
@@ -639,9 +647,31 @@ function initFilterModal() {
         if (e.target === filterModal) closeModal();
     });
     
-    distanceFilter?.addEventListener('input', (e) => {
+        distanceFilter?.addEventListener('change', (e) => {
+        const selectedDistance = parseInt(e.target.value);
+        
         if (distanceValue) {
-            distanceValue.textContent = `${e.target.value} km`;
+            distanceValue.textContent = `${selectedDistance} km`;
+        }
+        
+        // Si distance > 0 et pas de localisation, demander
+        if (selectedDistance > 0 && !userLocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    lib.saveLocation(userLocation);
+                    distanceValue.textContent = `${selectedDistance} km ✓`;
+                    lib.SuccessToast.fire({ title: 'Localisation activée !' });
+                },
+                (error) => {
+                    e.target.value = 0;
+                    if (distanceValue) distanceValue.textContent = '0 km';
+                    lib.ErrorToast.fire({ title: 'Accès à la localisation refusé' });
+                }
+            );
         }
     });
     
@@ -736,6 +766,29 @@ function applyEventFilters(filters, updateURLFlag = true) {
         if (filters.category && filters.category !== '') {
             if (event.category && event.category.toLowerCase() !== filters.category.toLowerCase()) {
                 return false;
+            }
+        }
+                if (filters.distance && filters.distance !== '0' && userLocation) {
+            // Géocoder l'événement si pas déjà fait
+            if (!event._geocoded) {
+                const addressLabel = formatAddress(event.address);
+                // Utiliser le cache existant ou demander au backend
+                const cacheKey = `${addressLabel}|${event?.address?.country || ''}`;
+                if (geocodeCache.has(cacheKey)) {
+                    event._geocoded = geocodeCache.get(cacheKey);
+                }
+            }
+            
+            if (event._geocoded) {
+                const distance = lib.getDistanceKm(
+                    userLocation.lat, 
+                    userLocation.lng, 
+                    event._geocoded.lat, 
+                    event._geocoded.lng
+                );
+                if (distance > parseInt(filters.distance)) {
+                    return false;
+                }
             }
         }
         

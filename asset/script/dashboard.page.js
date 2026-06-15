@@ -297,7 +297,7 @@ async function loadUserEvents() {
                 card.addEventListener('click', () => {
                     const eventId = card.getAttribute('data-event-id');
                     console.log('Événement cliqué:', eventId);
-                    window.navigate(`/event-detail?id=${eventId}`);  // ✅ Ajoute cette ligne
+                    window.navigate(`/event-detail?id=${eventId}&from=dashboard`);
                 });
             });
         } else {
@@ -601,7 +601,9 @@ function renderEventCard(event, template) {
     }
     
     // Image par défaut si pas d'image
-    const imageUrl = event.image || '/asset/img/default-event.jpg';
+        const imageUrl = event.images && event.images.length > 0 
+        ? `${lib.urlBackend}img/events/512/${event.images[0].fileName}.webp`
+        : './asset/img/student.jpg';
     
     // ✅ Construction de l'adresse complète à partir de l'objet address
     let formattedAddress = 'Adresse non disponible';
@@ -1240,5 +1242,5 @@ async function displayStatistics(stats) {
 export async function unmount() {
     console.log('Sortie du dashboard - reset onglet actif');
     localStorage.removeItem('dashboardActiveTab');
-    sessionStorage.removeItem('dashboardVisited');
+    // sessionStorage.removeItem('dashboardVisited');
 }

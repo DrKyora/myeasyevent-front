@@ -5,7 +5,8 @@ let selectedTemplate = null;
 let currentTemplateData = {};
 let editorHandlersInitialized = false;
 let originalTemplateHtml = '';
-let addressValidated = false; // ✅ AJOUTÉ
+let a
+let addressValidated = false;
 
 export async function init() {
     console.log('Page Création d\'événement initialisée !');
@@ -337,12 +338,31 @@ async function validateAddressWithGoogle() {
         if (data.status === 'success') {
             const validatedAddress = data.data.result.address.postalAddress;  // ✅ Corrigé: pas de .validation
             
-            if (validatedAddress.addressLines && validatedAddress.addressLines[0]) {
-                const parts = validatedAddress.addressLines[0].split(' ');
-                currentTemplateData.streetNumber = parts[0] || currentTemplateData.streetNumber;
-                currentTemplateData.street = parts.slice(1).join(' ') || currentTemplateData.street;
+            let streetNumber = currentTemplateData.streetNumber;
+            let street = currentTemplateData.street;
+                    
+            const addressComponents = data.data.result.address_components;
+            if (addressComponents && Array.isArray(addressComponents)) {
+                for (const component of addressComponents) {
+                    if (component.types.includes('street_number')) {
+                        streetNumber = component.long_name;
+                    }
+                    if (component.types.includes('route')) {
+                        street = component.long_name;
+                    }
+                }
+            } else if (validatedAddress.addressLines && validatedAddress.addressLines[0]) {
+                // Fallback: Parser l'adresse complète intelligemment
+                const addressLine = validatedAddress.addressLines[0];
+                const match = addressLine.match(/^(\d+[A-Za-z]*(?:\s+(?:bis|ter|quater))?)\s+(.+)$/i);
+                if (match) {
+                    streetNumber = match[1].trim();
+                    street = match[2].trim();
+                }
             }
             
+            currentTemplateData.streetNumber = streetNumber;
+            currentTemplateData.street = street;
             currentTemplateData.zipCode = validatedAddress.postalCode || currentTemplateData.zipCode;
             currentTemplateData.city = validatedAddress.locality || currentTemplateData.city;
             
@@ -545,6 +565,8 @@ async function publishEvent() {
             isDeleted: false
         };
         
+        const imagesToSend = currentTemplateData.image ? [currentTemplateData.image] : [];
+
         const response = await fetch(`${lib.urlBackend}API/event.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -552,7 +574,7 @@ async function publishEvent() {
             body: JSON.stringify({
                 action: 'addEvent',
                 event: eventData,
-                images: [],
+                images: imagesToSend,
                 categories: [],
                 session: lib.getCookie('MYEASYEVENT_Session')
             })

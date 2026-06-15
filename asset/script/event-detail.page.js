@@ -60,9 +60,17 @@ function initReservationForm() {
     const form = document.getElementById('reservationForm');
     const backBtn = document.getElementById('backToEvents');
     
-    backBtn?.addEventListener('click', () => {
-        window.navigate('/evenements');
-    });
+        backBtn?.addEventListener('click', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const from = urlParams.get('from') || 'events';
+            
+            if (from === 'dashboard') {
+                window.navigate('/dashboard');
+                localStorage.setItem('dashboardActiveTab', 'events');
+            } else {
+                window.navigate('/evenements');
+            }
+        });
     
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
