@@ -73,9 +73,11 @@
         <!-- Contenu principal -->
         <div class="flex items-center p-2 md:p-8 overflow-y-auto bg-aqua-haze-500 rounded-s-lg w-full">
             <!-- Section Informations Personnelles -->
-            <section id="section-informations" class="dashboard-section">
+            <section id="section-informations" class="dashboard-section hidden w-full h-full">
+                <div class="mb-4">
+                    <h2 class="text-2xl md:text-3xl font-serif italic text-blue-dianne-500">Mes Informations personnelles</h2>
+                </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
-                    
                     <!-- Card Mes informations -->
                     <div class="bg-blue-dianne-500 p-2 md:p-4 rounded-lg">
                         <div class="flex flex-col gap-2 md:gap-4 bg-aqua-haze-500 rounded-lg p-2 md:p-4">
@@ -187,7 +189,8 @@
             
             <!-- Section Mes événements -->
             <section id="section-events" class="dashboard-section hidden w-full h-full">
-                <div class="flex justify-end">
+                <div class="flex justify-between mb-4">
+                    <h2 class="text-2xl md:text-3xl font-serif italic text-blue-dianne-500">Mes événements</h2>
                     <button id="createEventBtn" class="bg-burnt-sienna-500 hover:bg-burnt-sienna-600 text-white px-4 py-2 md:px-8 md:py-4 rounded-lg flex gap-2 items-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -212,6 +215,9 @@
             </section>
             <!-- Section des devices -->
              <section id="section-devices" class="dashboard-section hidden w-full h-full">
+                <div class=" mb-4">
+                    <h2 class="text-2xl md:text-3xl font-serif italic text-blue-dianne-500">Mes périphériques</h2>
+                </div>
                 <!-- Conteneur des cartes de devices -->
                 <div id="devicesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Les cartes seront injectées ici -->
@@ -285,10 +291,10 @@
 
             </section>
                         
-            <section id="section-gestion-design" class="dashboard-section hidden">
-                <div class="flex justify-between items-center mb-8">
+            <section id="section-gestion-design" class="dashboard-section hidden w-full h-full">
+                <div class="flex justify-between mb-4">
                     <h2 class="text-2xl md:text-3xl font-serif italic text-blue-dianne-500">Gestion des designs</h2>
-                    <button id="addDesignBtn" class="inline-flex items-center rounded-lg bg-burnt-sienna-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-burnt-sienna-600">
+                    <button id="addDesignBtn" class="bg-burnt-sienna-500 hover:bg-burnt-sienna-600 text-white px-4 py-2 md:px-8 md:py-4 rounded-lg flex gap-2 items-center">
                         Ajouter un design
                     </button>
                 </div>
@@ -297,8 +303,6 @@
                     <!-- Les designs seront injectés ici -->
                 </div>
             </section>
-
-            <!-- Modale Ajouter Design -->
             <div id="addDesignModal" class="fixed inset-0 backdrop-blur-xs ease-in-out bg-opacity-50 hidden flex items-center justify-center z-50">
                 <div class="bg-blue-dianne-500 rounded-lg p-4 max-w-md w-full">
                     <div class="bg-aqua-haze-500 rounded-lg p-6">

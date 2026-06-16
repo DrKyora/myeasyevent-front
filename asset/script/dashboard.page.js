@@ -1303,13 +1303,15 @@ async function loadDesigns() {
         designGrid.innerHTML = '';
 
         data.data.templates.forEach(template => {
-            console.log('Template:', template);
-            
-            // Construire l'URL de l'image comme pour les events
-            const imageUrl = template.images.fileName
-                ? `${lib.urlBackend}img/template/512/${template.images[0].fileName}.webp`
+            // Prendre la première image valide (évite null et images supprimées)
+            const imageFileName = Array.isArray(template.images)
+                ? template.images.find(image => image && image.fileName && !image.isDeleted)?.fileName
+                : null;
+        
+            const imageUrl = imageFileName
+                ? `${lib.urlBackend}img/template/512/${imageFileName}.webp`
                 : './asset/img/student.jpg';
-            
+        
             const card = document.createElement('div');
             card.className = 'bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow';
             card.innerHTML = `

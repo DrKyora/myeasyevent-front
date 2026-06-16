@@ -14,6 +14,8 @@ export async function init() {
     // Initialiser les gestionnaires
     initTemplateSelectionHandlers();
     initTemplateSelectorModal();
+    await loadTemplateSelectorList();
+    templatesListLoaded = true; 
 }
 
 // ========================================
@@ -147,6 +149,7 @@ function loadTemplatePreview(htmlTemplate) {
     const preview = document.getElementById('templatePreview');
     
     originalTemplateHtml = htmlTemplate || '';
+    console.log('Template HTML original:', originalTemplateHtml);
     
     // ✅ Champs d'adresse séparés
     currentTemplateData = {
@@ -158,7 +161,7 @@ function loadTemplatePreview(htmlTemplate) {
         streetNumber: '',
         zipCode: '',
         city: '',
-        country: 'France',
+        country: 'Belgique',
         capacity: 100,
         minAge: 0,
         image: '',
@@ -179,7 +182,23 @@ function updatePreview() {
     html = html.replace(/{{description}}/g, currentTemplateData.description || '');
     html = html.replace(/{{address}}/g, fullAddress || 'Adresse non définie');
     html = html.replace(/{{titleColor}}/g, currentTemplateData.titleColor || '#1e3a5f');
-    html = html.replace(/{{image}}/g, currentTemplateData.image || '');
+    if (currentTemplateData.image) {
+        html = html.replace(/src="{{image}}"/g, `src="${currentTemplateData.image}"`);
+        html = html.replace(
+            /{{image}}/g,
+            `<img src="${currentTemplateData.image}" alt="${currentTemplateData.title || 'Image événement'}" class="w-full h-full object-cover" />`
+        );
+    } else {
+        html = html.replace(/src="{{image}}"/g, `src="./asset/img/student.jpg"`);
+        html = html.replace(
+            /{{image}}/g,
+            `<div class="w-full h-full bg-slate-200 flex items-center justify-center">
+                <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>`
+        );
+    }
     
     if (currentTemplateData.startDate) {
         const startDate = new Date(currentTemplateData.startDate);
@@ -447,28 +466,40 @@ async function loadTemplateSelectorList() {
         });
         
         const data = await response.json();
+        console.log('Templates pour modal:', data);
         
         if (data.status === 'success' && data.data?.templates && data.data.templates.length > 0) {
             const templates = data.data.templates;
-            
-            list.innerHTML = templates.map(template => `
-                <div class="border border-gray-200 rounded-lg p-3 hover:border-blue-dianne-500 cursor-pointer transition-colors template-selector-item" data-template-id="${template.id}">
-                    <div class="flex items-center gap-3">
-                        <div class="w-16 h-16 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
-                            ${template.images && template.images[0] 
-                                ? `<img src="${lib.urlBackend}${template.images[0].url}" alt="${template.title}" class="w-full h-full object-cover" />`
-                                : `<svg class="w-8 h-8 text-gray-400 m-auto mt-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                  </svg>`
-                            }
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-semibold text-sm text-blue-dianne-500 truncate">${template.title}</h4>
-                            <p class="text-xs text-gray-500 truncate">${template.description || 'Aucune description'}</p>
+
+            list.innerHTML = templates.map(template => {
+                const imageFileName = Array.isArray(template.images)
+                    ? template.images.find(image => image && image.fileName && !image.isDeleted)?.fileName
+                    : null;
+
+                const imageUrl = imageFileName
+                    ? `${lib.urlBackend}img/template/512/${imageFileName}.webp`
+                    : './asset/img/student.jpg';
+
+                return `
+                    <div class="border border-burnt-sienna-500 rounded-lg p-3 hover:border-burnt-sienna-600 cursor-pointer transition-colors template-selector-item bg-aqua-haze-500" data-template-id="${template.id}">
+                        <div class="flex items-center gap-3 flex-col">
+                            <div class="w-16 h-16 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
+                                ${imageFileName
+                                    ? `<img src="${imageUrl}" alt="${template.title}" class="w-full h-full object-cover" />`
+                                    : `<svg class="w-8 h-8 text-gray-400 m-auto mt-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                       </svg>`
+                                }
+                            </div>
+                            <div class="flex-1 w-full">
+                                <h4 class="font-semibold text-sm text-blue-dianne-500 truncate">${template.title}</h4>
+                                <div class="border-t border-burnt-sienna-500 mt-4 mb-4"></div>
+                                <p class="text-xs text-blue-dianne-500 truncate">${template.description || 'Aucune description'}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
             
             list.querySelectorAll('.template-selector-item').forEach(item => {
                 item.addEventListener('click', async () => {
@@ -476,7 +507,6 @@ async function loadTemplateSelectorList() {
                     await changeTemplate(templateId);
                 });
             });
-            
         } else {
             list.innerHTML = '<p class="text-gray-500 text-center py-4">Aucun template disponible</p>';
         }
@@ -610,7 +640,14 @@ function generateFinalHtml() {
     html = html.replace(/{{description}}/g, currentTemplateData.description || '');
     html = html.replace(/{{address}}/g, fullAddress);
     html = html.replace(/{{titleColor}}/g, currentTemplateData.titleColor || '#1e3a5f');
-    html = html.replace(/{{image}}/g, currentTemplateData.image || '');
+    const finalImageSrc = currentTemplateData.image || './asset/img/student.jpg';
+    const finalImageBlock = `<img src="${finalImageSrc}" alt="${currentTemplateData.title || 'Image événement'}" class="w-full h-full object-cover" />`;
+
+    // Cas templates anciens: <img src="{{image}}">
+    html = html.replace(/src="{{image}}"/g, `src="${finalImageSrc}"`);
+
+    // Cas templates nouveaux: {{image}} seul
+    html = html.replace(/{{image}}/g, finalImageBlock);
     
     if (currentTemplateData.startDate) {
         const startDate = new Date(currentTemplateData.startDate);

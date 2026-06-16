@@ -5,6 +5,7 @@
     --color-blue-dianne-500: oklch(37.528% 0.04379 226.2);
     --color-aqua-haze-500: oklch(95.57% 0.00895 214.34);
     --color-burnt-sienna-500: oklch(67.833% 0.15593 35.185);
+    --color-burnt-sienna-600: oklch(60.833% 0.15593 35.185);
 }
 
 @layer base {
