@@ -3,9 +3,6 @@ import * as lib from './library.js';
 let currentEvent = null;
 
 export async function init() {
-    console.log('Page détail événement initialisée');
-    
-    // Récupérer l'ID de l'événement depuis l'URL
     const urlParams = new URLSearchParams(window.location.search);
     const eventId = urlParams.get('id');
     
@@ -35,8 +32,6 @@ async function loadEvent(eventId) {
         });
         
         const data = await response.json();
-        console.log('Événement chargé:', data);
-        
         if (data.status === 'success' && data.data?.event) {
             currentEvent = data.data.event;
             
@@ -125,6 +120,5 @@ async function submitReservation() {
 }
 
 export async function unmount() {
-    console.log('Sortie page événement');
     currentEvent = null;
 }

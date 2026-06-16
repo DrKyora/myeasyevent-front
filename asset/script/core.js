@@ -64,8 +64,6 @@ function initializeBurgerMenu() {
       mainNav.classList.add('hidden');
     });
   });
-  
-  console.log('[core] burger menu initialisé');
 }
 
 /* ---------------------------------------
@@ -108,8 +106,6 @@ function updateHeaderAuth(isLoggedIn) {
     connectedContent?.classList.add('hidden');
     userModalBtn?.classList.remove('hidden');
   }
-  
-  console.log('[core] header mis à jour - connecté:', isLoggedIn);
 }
 
 // Exposer globalement pour library.js
@@ -182,8 +178,6 @@ function initializeUserModal() {
       userModal.classList.add('hidden');
     });
   });
-  
-  console.log('[core] modal utilisateur initialisée');
 }
 
 // Export explicite demandé
@@ -312,10 +306,7 @@ export async function renderRoute(pathname) {
   
   let cleanPath = stripBase(pathOnly);
   if (cleanPath !== '/' && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
-  const route = routes[cleanPath] || routes['/404'] || routes['/'];
-  
-  console.log(`[renderRoute] path="${pathname}" → template="${route.template}"`);
-  
+  const route = routes[cleanPath] || routes['/404'] || routes['/'];  
   // Animation de sortie
   const oldMain = document.querySelector('main');
   if (oldMain) {

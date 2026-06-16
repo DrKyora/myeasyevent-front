@@ -2,8 +2,6 @@
 import * as lib from './library.js';
 
 export function init() {
-    console.log('Page register initialisée !');
-    
     const form = document.getElementById('registerForm');
     const lastNameInput = document.getElementById('lastName');
     const firstNameInput = document.getElementById('firstName');
@@ -89,8 +87,4 @@ export function init() {
             btnRegister.textContent = 'Inscription';
         }
     });
-}
-
-export function unmount() {
-    console.log('Page register démontée');
 }

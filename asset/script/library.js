@@ -29,7 +29,6 @@ export function setCookie(cookieName, cookieValue, sec) {
   const cookie_content = `${cookieName}=${encodeURIComponent(cookieValue)};expires=${expires.toGMTString()};path=/`;
   
   document.cookie = cookie_content;
-  console.log('[setCookie]', cookieName, 'créé avec succès');
 }
 
 export function getCookie(cookieName) {
@@ -45,13 +44,11 @@ export function getCookie(cookieName) {
       return c.substring(name.length, c.length);
     }
   }
-  console.log('[getCookie]', cookieName, 'non trouvé'); // Debug
   return false;
 }
 
 export function deleteCookie(cookieName) {
   setCookie(cookieName, "", -1);
-  console.log('[deleteCookie]', cookieName, 'supprimé'); // Debug
 }
 
 // ======================
@@ -112,15 +109,7 @@ export const ErrorToast = Swal.mixin({
  */
 export async function checkUserLoginStatus() {
   const session = getCookie("MYEASYEVENT_Session");
-  
-  if (!session) {
-    console.log('[checkUserLoginStatus] Pas de session trouvée');
-    return null;
-  }
-
   try {
-    console.log('[checkUserLoginStatus] Vérification session...');
-    
     const res = await fetch(`${urlBackend}API/connexions.php`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -132,14 +121,10 @@ export async function checkUserLoginStatus() {
     });
 
     const data = await res.json();
-    console.log('[checkUserLoginStatus] Réponse:', data);
-    
     if (data.status === "success" && data.data?.user) {
   // ⭐ Convertir isAdmin (booléen) en role (string)
   const role = data.data.user.isAdmin ? 'admin' : 'user';
-  sessionStorage.setItem("userRole", role);
-  console.log('✅ Rôle stocké:', role); // Debug
-  
+  sessionStorage.setItem("userRole", role);  
   return data.data.user;
 }
     
@@ -171,9 +156,6 @@ export async function tryConnexionWToken() {
         token: deviceToken,
       }),
     });
-
-    console.log(res);
-
     const data = await res.json();
 
     if (data.status === 'success' && data.data?.session) {
@@ -233,8 +215,6 @@ export function saveLocation(location) {
 export function appNavigate(to = '/') {
   const rel = toAppPath(to);
   const target = `${APP_BASE}${rel}`;
-  console.log('[appNavigate] Navigation vers:', target);
-  
   if (typeof window.navigate === 'function') {
     window.navigate(rel);
   } else {

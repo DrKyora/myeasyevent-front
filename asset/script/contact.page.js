@@ -1,7 +1,6 @@
 import * as lib from './library.js';
 
 export function init() {
-    console.log('Page Contact initialisée !');
     
     const inputLastName = document.querySelector("#lastName");
     const inputFirstName = document.querySelector("#firstName");

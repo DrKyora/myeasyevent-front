@@ -21,8 +21,6 @@ let geocodeCache = new Map();
 let userLocation = lib.getSavedLocation();
 
 export async function init() {
-    console.log('Page Événements initialisée !');
-    
     viewMode = 'list';
     // Réinitialiser la carte (elle peut persister du dernier passage)
     mapInstance = null;
@@ -70,8 +68,6 @@ async function loadEvents() {
         });
         
         const data = await response.json();
-        console.log('Réponse backend:', data);
-        
         if (data.status === 'success' && data.data?.events) {
             allEvents = data.data.events;
             filteredEvents = [...allEvents];
@@ -509,7 +505,6 @@ async function renderMapView() {
     });
 
     marker.addEventListener('click', () => {
-        console.log('🖱️ Marqueur cliqué:', event.title);
         mapInstance.setCenter(location);
         mapInstance.setZoom(15);
         mapInfoWindow.setContent(buildMarkerContent(event, addressLabel));
@@ -755,7 +750,6 @@ function createEventCardFromTemplate(event) {
     
     // Ajouter le listener pour le clic
     cardElement.addEventListener('click', () => {
-        console.log('Clic sur événement:', event.id);
         window.navigate(`/event-detail?id=${event.id}&from=events`);
     });
     

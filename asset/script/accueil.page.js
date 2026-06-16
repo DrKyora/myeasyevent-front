@@ -93,7 +93,6 @@ function initEventFilterButtons() {
             const filter = btn.dataset.filter;
             // Naviguer vers la page événements avec le filtre
             lib.appNavigate(`/evenements?filter=${filter}`);
-            console.log(`[accueil] Filtre appliqué : ${filter}`);
         });
     });
 }

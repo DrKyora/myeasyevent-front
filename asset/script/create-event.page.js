@@ -9,9 +9,6 @@ let a
 let addressValidated = false;
 
 export async function init() {
-    console.log('Page Création d\'événement initialisée !');
-    
-    // Initialiser les gestionnaires
     initTemplateSelectionHandlers();
     initTemplateSelectorModal();
     await loadTemplateSelectorList();
@@ -38,9 +35,7 @@ async function loadTemplates() {
             })
         });
         
-        const data = await response.json();
-        console.log('Templates reçus:', data);
-        
+        const data = await response.json();        
         if (data.status === 'success' && data.data?.templates && data.data.templates.length > 0) {
             const templates = data.data.templates;
             
@@ -114,9 +109,7 @@ async function loadTemplateForEditing(templateId) {
             })
         });
         
-        const data = await response.json();
-        console.log('Template complet:', data);
-        
+        const data = await response.json();        
         if (data.status === 'success' && data.data?.template) {
             selectedTemplate = data.data.template;
             showEditorStep();
@@ -149,9 +142,6 @@ function loadTemplatePreview(htmlTemplate) {
     const preview = document.getElementById('templatePreview');
     
     originalTemplateHtml = htmlTemplate || '';
-    console.log('Template HTML original:', originalTemplateHtml);
-    
-    // ✅ Champs d'adresse séparés
     currentTemplateData = {
         title: 'Titre de l\'événement',
         description: '',
@@ -311,11 +301,6 @@ function initEditorHandlers() {
     closePanel?.addEventListener('click', () => {
         editorPanel.classList.add('translate-x-full');
     });
-    
-    btnSave?.addEventListener('click', () => {
-        console.log('Sauvegarde du brouillon non implémentée');
-    });
-    
     btnPublish?.addEventListener('click', async () => {
         await publishEvent();
     });
@@ -352,8 +337,6 @@ async function validateAddressWithGoogle() {
         });
         
         const data = await response.json();
-        console.log('Validation adresse:', data);
-        
         if (data.status === 'success') {
             const validatedAddress = data.data.result.address.postalAddress;  // ✅ Corrigé: pas de .validation
             
@@ -466,8 +449,6 @@ async function loadTemplateSelectorList() {
         });
         
         const data = await response.json();
-        console.log('Templates pour modal:', data);
-        
         if (data.status === 'success' && data.data?.templates && data.data.templates.length > 0) {
             const templates = data.data.templates;
 
@@ -679,7 +660,6 @@ function generateFinalHtml() {
 }
 
 export async function unmount() {
-    console.log('Sortie de la page création d\'événement');
     selectedTemplate = null;
     currentTemplateData = {};
 }

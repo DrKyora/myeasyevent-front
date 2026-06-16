@@ -17,9 +17,6 @@ const loadedSections = {
 };
 
 export async function init() {
-    console.log('Page dashboard initialisée !');
-    
-    // ✅ RÉINITIALISER les flags de sections chargées à chaque visite
     Object.keys(loadedSections).forEach(key => {
         loadedSections[key] = false;
     });
@@ -55,7 +52,6 @@ function showAdminTabs() {
     adminTabs.forEach(tab => {
         tab.classList.remove('hidden');
     });
-    console.log('✅ Onglets admin affichés');
 }
 
 // ✅ Définir l'onglet actif visuellement
@@ -90,19 +86,9 @@ function setActiveTab(sectionName) {
 
 // ✅ Charger une section spécifique (lazy loading)
 async function loadSection(sectionName) {
-    // Si déjà chargée, ne rien faire
-    if (loadedSections[sectionName]) {
-        console.log(`Section ${sectionName} déjà chargée`);
-        return;
-    }
-    
-    // Attendre que le DOM soit complètement mis à jour
     await new Promise(resolve => requestAnimationFrame(() => {
         requestAnimationFrame(resolve);
-    }));
-    
-    console.log(`Chargement de la section ${sectionName}...`);
-    
+    }));    
     switch(sectionName) {
         case 'informations':
             await loadUserInfo();
@@ -216,7 +202,6 @@ async function loadUserInfo() {
         
         const data = await response.json();
         if (data.status === 'success' && data.data.user) {
-            console.log('Utilisateur connecté:', data.data.user);
             const user = data.data.user;
             
             // Pré-remplir les champs
@@ -254,15 +239,6 @@ async function loadUserEvents() {
             await new Promise(resolve => setTimeout(resolve, 50));
             attempts++;
         }
-        
-        if (!eventsGrid || !noEventsMessage || !createEventBtn) {
-            console.error('Éléments DOM non trouvés après 500ms');
-            return;
-        }
-        
-        console.log('✅ Éléments DOM trouvés');
-        
-        // Charger le template de carte
         const templateResponse = await fetch('./components/eventCard.html');
         const eventCardTemplate = await templateResponse.text();
         
@@ -284,8 +260,6 @@ async function loadUserEvents() {
         });
         
         const data = await response.json();
-        console.log('Données événements:', data);
-        
         if (data.status === 'success' && data.data?.events && data.data.events.length > 0) {
             const events = data.data.events;
             
@@ -301,13 +275,10 @@ async function loadUserEvents() {
             eventsGrid.querySelectorAll('[data-event-id]').forEach(card => {
                 card.addEventListener('click', () => {
                     const eventId = card.getAttribute('data-event-id');
-                    console.log('Événement cliqué:', eventId);
                     window.navigate(`/event-detail?id=${eventId}&from=dashboard`);
                 });
             });
         } else {
-            console.log('Aucun événement - affichage du message');
-            // Afficher le message "aucun événement"
             eventsGrid.innerHTML = '';
             noEventsMessage.classList.remove('hidden');
         }
@@ -769,8 +740,6 @@ function getDeviceIcon(model) {
 // ⭐ ========================================
 
 async function loadAdminUsers() {
-    console.log('Chargement gestion utilisateurs...');
-    
     try {
         const usersTableBody = document.getElementById('usersTableBody');
         const usersCardsContainer = document.getElementById('usersCardsContainer');
@@ -808,8 +777,6 @@ async function loadAdminUsers() {
         }
         
         if (data.status === 'success' && data.data?.users && data.data.users.length > 0) {
-            console.log('Utilisateurs chargés:', data.data.users);
-            
             const allUsers = data.data.users;
             const itemsPerPage = 10;
             let currentPage = 1;
@@ -899,7 +866,6 @@ async function loadAdminUsers() {
             noUsersMessage.classList.add('hidden');
             
         } else {
-            console.log('Aucun utilisateur trouvé');
             usersTableBody.innerHTML = '';
             usersCardsContainer.innerHTML = '';
             noUsersMessage.classList.remove('hidden');
@@ -1137,8 +1103,6 @@ async function toggleUserDeactivation(userId) {
 // Admin function EVENT
 //
 async function loadAdminEvents() {
-    console.log('Chargement gestion événements...');
-    
     try {
         const response = await fetch(`${lib.urlBackend}API/admin/adminEvents.php`, {
             method: 'POST',
@@ -1156,11 +1120,6 @@ async function loadAdminEvents() {
             lib.ErrorToast.fire({ title: '⛔ Accès refusé : droits admin requis' });
             return;
         }
-        
-        if (data.status === 'success') {
-            console.log('Événements chargés:', data.data);
-            // TODO: Afficher la liste des événements
-        }
     } catch (error) {
         console.error('Erreur chargement événements:', error);
         lib.ErrorToast.fire({ title: 'Erreur de chargement' });
@@ -1170,8 +1129,6 @@ async function loadAdminEvents() {
 // Admin function STATS
 //
 async function loadAdminStats() {
-    console.log('Chargement statistiques...');
-    
     try {
         const response = await fetch(`${lib.urlBackend}API/admin/adminStats.php`, {
             method: 'POST',
@@ -1186,7 +1143,6 @@ async function loadAdminStats() {
         const data = await response.json();
         
         if (data.status === 'success' && data.data?.stats) {
-            console.log('Statistiques chargées:', data.data.stats);
             await displayStatistics(data.data.stats);
         }else{
             lib.ErrorToast.fire({ title: data.message || 'Erreur lors du chargement des statistiques' });
@@ -1199,7 +1155,6 @@ async function loadAdminStats() {
 
 async function displayStatistics(stats) {
     try {
-        console.log('Affichage des statistiques:', stats);
         const response = await fetch('./components/statCard.html');
         const template = await response.text();
         
@@ -1226,8 +1181,6 @@ async function displayStatistics(stats) {
         Object.entries(stats).forEach(([key, value]) => {
             let svgPath = svgMapping[key] || './asset/svgs/gestion_stats.svg';
             let label = labelMapping[key] || key;
-            
-            console.log(value, label)
             const cardHtml = template
                 .replace(/{{svgPath}}/g, svgPath)
                 .replace(/{{value}}/g, value)
@@ -1292,8 +1245,6 @@ async function loadDesigns() {
             })
         });
         const data = await response.json();
-        console.log('Réponse designs:', data.data);
-
         if (data.status !== 'success' || !data.data?.templates || !Array.isArray(data.data.templates)) {
             console.error('Erreur chargement designs:', data);
             return;
@@ -1382,7 +1333,6 @@ async function addDesign() {
 }
 
 export async function unmount() {
-    console.log('Sortie du dashboard - reset onglet actif');
     localStorage.removeItem('dashboardActiveTab');
     sessionStorage.removeItem('dashboardVisited');
 }
