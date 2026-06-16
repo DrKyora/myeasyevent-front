@@ -1,0 +1,14 @@
+﻿<!-- Template pour un événement dans la liste de la carte -->
+<div class="map-event-item p-3 border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors" data-event-id="{{eventId}}" data-event-lat="{{eventLat}}" data-event-lng="{{eventLng}}">
+    <div class="flex gap-3">
+        <!-- Image mini -->
+        <img src="{{image}}" alt="{{title}}" class="w-16 h-16 object-cover rounded">
+        
+        <!-- Infos -->
+        <div class="flex-1 min-w-0">
+            <h4 class="font-semibold text-sm text-blue-dianne-500 truncate">{{title}}</h4>
+            <p class="text-xs text-gray-600 truncate">{{address}}</p>
+            <p class="text-xs text-gray-500 mt-1">{{startDate}}</p>
+        </div>
+    </div>
+</div>

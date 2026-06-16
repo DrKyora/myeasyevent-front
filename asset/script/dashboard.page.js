@@ -12,7 +12,8 @@ const loadedSections = {
     devices: false,
     'gestion-utilisateurs': false,
     'gestion-evenements': false,
-    'statistiques': false
+    'statistiques': false,
+    'design': false
 };
 
 export async function init() {
@@ -139,6 +140,10 @@ async function loadSection(sectionName) {
         case 'statistiques':
             await loadAdminStats();
             loadedSections['statistiques'] = true;
+            break;
+        case 'gestion-design':
+            await initDesignManagement();
+            loadedSections['gestion-design'] = true;
             break;
     }
 }
@@ -1238,9 +1243,144 @@ async function displayStatistics(stats) {
         lib.ErrorToast.fire({ title: 'Erreur d\'affichage des statistiques' });
     }
 }
+//
+// Admin function design
+//
+async function loadAdminDesign() {
+    await initDesignManagement();
+}
+
+async function initDesignManagement() {
+    const addDesignBtn = document.getElementById('addDesignBtn');
+    const addDesignModal = document.getElementById('addDesignModal');
+    const closeDesignModal = document.getElementById('closeDesignModal');
+    const addDesignForm = document.getElementById('addDesignForm');
+
+    addDesignBtn.addEventListener('click', () => {
+        addDesignModal.classList.remove('hidden');
+        addDesignForm.reset();
+    });
+
+    closeDesignModal.addEventListener('click', () => {
+        addDesignModal.classList.add('hidden');
+    });
+
+    addDesignModal.addEventListener('click', (e) => {
+        if (e.target === addDesignModal) {
+            addDesignModal.classList.add('hidden');
+        }
+    });
+
+    addDesignForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await addDesign();
+    });
+
+    await loadDesigns();
+}
+
+async function loadDesigns() {
+    try {
+        const response = await fetch(`${lib.urlBackend}API/template.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                action: 'getAllTemplates',
+                session: lib.getCookie('MYEASYEVENT_Session'),
+                token: localStorage.getItem('MYEASYEVENT_Token')
+            })
+        });
+        const data = await response.json();
+        console.log('Réponse designs:', data.data);
+
+        if (data.status !== 'success' || !data.data?.templates || !Array.isArray(data.data.templates)) {
+            console.error('Erreur chargement designs:', data);
+            return;
+        }
+
+        const designGrid = document.getElementById('designGrid');
+        designGrid.innerHTML = '';
+
+        data.data.templates.forEach(template => {
+            console.log('Template:', template);
+            
+            // Construire l'URL de l'image comme pour les events
+            const imageUrl = template.images.fileName
+                ? `${lib.urlBackend}img/template/512/${template.images[0].fileName}.webp`
+                : './asset/img/student.jpg';
+            
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow';
+            card.innerHTML = `
+                <img src="${imageUrl}" alt="${template.title}" class="w-full h-48 object-cover">
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-blue-dianne-500 mb-1">${template.title}</h3>
+                    <p class="text-gray-600 text-sm mb-2">${template.description}</p>
+                </div>
+            `;
+            designGrid.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Erreur lors du chargement des designs:', error);
+    }
+}
+
+async function addDesign() {
+    const title = document.getElementById('designTitle').value;
+    const description = document.getElementById('designDescription').value;
+    const html = document.getElementById('designStructure').value;  // ← récupère designStructure
+    const imageFile = document.getElementById('designImage').files[0];
+    const categories = Array.from(document.getElementById('designCategories').selectedOptions).map(o => o.value);
+
+    if (!title || !description || !html || !imageFile || categories.length === 0) {
+        lib.ErrorToast.fire({ title: 'Tous les champs sont requis' });
+        return;
+    }
+
+    try {
+        // Convertir l'image en base64
+        const imageBase64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(imageFile);
+        });
+
+        const response = await fetch(`${lib.urlBackend}API/template.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                action: 'addTemplate',
+                session: lib.getCookie('MYEASYEVENT_Session'),
+                template: {
+                    title: title,
+                    description: description,
+                    html: html  // ← envoie comme 'html' au backend
+                },
+                images: imageBase64,
+                categories: JSON.stringify(categories)
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            document.getElementById('addDesignModal').classList.add('hidden');
+            await loadDesigns();
+            lib.SuccessToast.fire({ title: 'Design ajouté avec succès' });
+        } else {
+            lib.ErrorToast.fire({ title: data.message || 'Erreur lors de l\'ajout du design' });
+        }
+    } catch (error) {
+        console.error('Erreur lors de l\'ajout du design:', error);
+        lib.ErrorToast.fire({ title: 'Erreur lors de l\'ajout du design' });
+    }
+}
 
 export async function unmount() {
     console.log('Sortie du dashboard - reset onglet actif');
     localStorage.removeItem('dashboardActiveTab');
-    // sessionStorage.removeItem('dashboardVisited');
+    sessionStorage.removeItem('dashboardVisited');
 }

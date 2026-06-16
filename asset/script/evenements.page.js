@@ -37,6 +37,7 @@ export async function init() {
     initSearch();
     initPagination();
     initViewToggle();
+    initMapModal();  // NOUVEAU: Initialiser la modale mobile
     
     // Charger les événements
     await loadEvents();
@@ -238,6 +239,192 @@ function syncViewToggleButtons() {
     }
 }
 
+
+// ===== NOUVELLE FONCTIONNALITÉ: Liste + Modale Mobile pour la carte =====
+
+// Rendre la liste des événements pour la vue carte (desktop)
+async function renderMapEventsList() {
+    const listContainer = document.getElementById('mapEventsListContainer');
+    const listCount = document.getElementById('mapListCount');
+    
+    if (!listContainer || !listCount) return;
+
+    const eventsToShow = [...filteredEvents];
+    
+    if (eventsToShow.length === 0) {
+        listContainer.innerHTML = '<p class="p-4 text-center text-gray-500">Aucun événement</p>';
+        listCount.textContent = '0 événement';
+        return;
+    }
+
+    // Charger le template de l'item
+    let itemTemplate = '';
+    try {
+        const templateResponse = await fetch('./components/mapEventItem.html');
+        itemTemplate = await templateResponse.text();
+    } catch (error) {
+        console.error('Erreur chargement template:', error);
+        return;
+    }
+    
+    listContainer.innerHTML = '';
+    
+    eventsToShow.forEach(event => {
+        const imageUrl = event.images?.length > 0 
+            ? `${lib.urlBackend}img/events/512/${event.images[0].fileName}.webp`
+            : './asset/img/student.jpg';
+        
+        const startDate = typeof moment !== 'undefined'
+            ? moment(event.startDate).format('DD MMMM HH:mm')
+            : new Date(event.startDate).toLocaleDateString('fr-FR');
+        
+        const itemHtml = itemTemplate
+            .replace(/{{eventId}}/g, event.id)
+            .replace(/{{image}}/g, imageUrl)
+            .replace(/{{title}}/g, event.title)
+            .replace(/{{address}}/g, formatAddress(event.address))
+            .replace(/{{startDate}}/g, startDate);
+        
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = itemHtml;
+        const item = tempDiv.firstElementChild;
+        
+        // Clic sur l'item = zoom sur le marqueur (desktop)
+        item.addEventListener('click', () => {
+            zoomToEvent(event);
+            highlightEventItem(event.id);
+        });
+        
+        listContainer.appendChild(item);
+    });
+    
+    listCount.textContent = `${eventsToShow.length} événement${eventsToShow.length > 1 ? 's' : ''}`;
+}
+
+// Zoom sur un événement spécifique
+async function zoomToEvent(event) {
+    const addressLabel = formatAddress(event.address);
+    const location = await geocodeEventAddress(event, addressLabel);
+    
+    if (location && mapInstance) {
+        mapInstance.setCenter(location);
+        mapInstance.setZoom(15);
+        
+        // Ouvrir l'infowindow
+        mapInfoWindow.setContent(buildMarkerContent(event, addressLabel));
+        mapInfoWindow.setPosition(location);
+        mapInfoWindow.open({ map: mapInstance });
+    }
+}
+
+// Mettre en évidence l'item dans la liste
+function highlightEventItem(eventId) {
+    document.querySelectorAll('.map-event-item').forEach(item => {
+        item.classList.remove('bg-blue-100', 'border-l-4', 'border-l-blue-dianne-500');
+    });
+    
+    const activeItem = document.querySelector(`[data-event-id="${eventId}"]`);
+    if (activeItem) {
+        activeItem.classList.add('bg-blue-100', 'border-l-4', 'border-l-blue-dianne-500');
+        activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+// Afficher la modale mobile pour un événement
+function openMapEventModal(event, addressLabel) {
+    const modal = document.getElementById('mapEventModal');
+    const title = document.getElementById('modalEventTitle');
+    const content = document.getElementById('mapEventModalContent');
+    const viewDetailBtn = document.getElementById('viewEventDetail');
+    
+    if (!modal || !title || !content || !viewDetailBtn) return;
+    
+    // Remplir les infos
+    title.textContent = event.title;
+    
+    const imageUrl = event.images?.length > 0 
+        ? `${lib.urlBackend}img/events/512/${event.images[0].fileName}.webp`
+        : './asset/img/student.jpg';
+    
+    const startDate = typeof moment !== 'undefined'
+        ? moment(event.startDate).format('DD MMMM YYYY HH:mm')
+        : new Date(event.startDate).toLocaleDateString('fr-FR');
+    
+    const endDate = typeof moment !== 'undefined'
+        ? moment(event.endDate).format('DD MMMM YYYY HH:mm')
+        : new Date(event.endDate).toLocaleDateString('fr-FR');
+    
+    const nbReservations = Array.isArray(event.reservations) ? event.reservations.length : 0;
+    const placesDisponibles = event.maxReservation - nbReservations;
+    const placesClass = placesDisponibles > 0 ? 'text-green-600' : 'text-red-600';
+    const placesText = placesDisponibles > 0 ? `${placesDisponibles} place(s)` : 'Complet';
+    
+    const ageBadges = {
+        0: 'Tout public',
+        12: '12+',
+        16: '16+',
+        18: '18+'
+    };
+    const ageBadge = ageBadges[event.ageRestriction] || 'Tout public';
+    
+    content.innerHTML = `
+        <div class="p-4">
+            <img src="${imageUrl}" alt="${event.title}" class="w-full h-64 object-cover rounded-lg mb-4">
+            
+            <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 text-blue-dianne-500">${ageBadge}</span>
+                    <span class="${placesClass} font-semibold text-sm">${placesText}</span>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-600">Organisateur</h4>
+                    <p class="text-sm text-gray-900">${event.user?.firstName || ''} ${event.user?.lastName || ''}</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-600">Lieu</h4>
+                    <p class="text-sm text-gray-900">${addressLabel}</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-600">Date et heure</h4>
+                    <p class="text-sm text-gray-900">Du ${startDate}</p>
+                    <p class="text-sm text-gray-900">Au ${endDate}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Mettre à jour le bouton "Voir détails"
+    viewDetailBtn.onclick = () => {
+        modal.classList.add('hidden');
+        window.navigate(`/event-detail?id=${event.id}&from=map`);
+    };
+    
+    // Afficher la modale
+    modal.classList.remove('hidden');
+}
+
+// Initialiser la modale mobile
+function initMapModal() {
+    const modal = document.getElementById('mapEventModal');
+    const closeBtn = document.getElementById('closeMapEventModal');
+    
+    if (!modal || !closeBtn) return;
+    
+    closeBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+    
+    // Fermer aussi si clic sur le backdrop
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+}
+
 // Afficher les événements sur la carte
 async function renderMapView() {
     const mapElement = document.getElementById('eventsMap');
@@ -292,6 +479,9 @@ async function renderMapView() {
     }
 
     mapStatus.textContent = 'Géocodage des événements...';
+    
+    // ✅ NOUVEAU: Afficher la liste d'événements (desktop)
+    await renderMapEventsList();
 
     const markerData = await Promise.all(eventsToShow.map(async event => {
         const addressLabel = formatAddress(event.address);
@@ -309,20 +499,31 @@ async function renderMapView() {
     }
     const bounds = new google.maps.LatLngBounds();
 
+        const isMobileView = window.innerWidth < 768;
+
     validMarkers.forEach(({ event, location, addressLabel }) => {
-        const marker = new google.maps.marker.AdvancedMarkerElement({
-            map: mapInstance,
-            position: location,
-            title: event.title,
-        });
+    const marker = new google.maps.marker.AdvancedMarkerElement({
+        map: mapInstance,
+        position: location,
+        title: event.title,
+    });
 
-        marker.addEventListener('gmp-click', () => {
-            mapInfoWindow.setContent(buildMarkerContent(event, addressLabel));
-            mapInfoWindow.open({ map: mapInstance, anchor: marker });
-        });
+    marker.addEventListener('click', () => {
+        console.log('🖱️ Marqueur cliqué:', event.title);
+        mapInstance.setCenter(location);
+        mapInstance.setZoom(15);
+        mapInfoWindow.setContent(buildMarkerContent(event, addressLabel));
+        mapInfoWindow.open({ map: mapInstance, anchor: marker });
+        highlightEventItem(event.id);
+    });
 
-        mapMarkers.push(marker);
-        bounds.extend(location);
+    mapMarkers.push(marker);
+    bounds.extend(location);
+    });
+    mapInfoWindow.addListener('closeclick', () => {
+        document.querySelectorAll('.map-event-item').forEach(item => {
+            item.classList.remove('bg-blue-100', 'border-l-4', 'border-l-blue-dianne-500');
+        });
     });
 
     if (validMarkers.length === 1) {
@@ -508,9 +709,9 @@ function buildMarkerContent(event, addressLabel) {
             <h3 class="text-lg font-semibold text-blue-dianne-500 mb-1">${title}</h3>
             <p class="text-sm text-gray-600 mb-1">${place}</p>
             <p class="text-sm text-gray-500 mb-3">Du ${startDate} au ${endDate}</p>
-            <a href="/event-detail?id=${encodeURIComponent(event.id)}" class="inline-flex items-center rounded-lg bg-burnt-sienna-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-burnt-sienna-600">
+            <button onclick="window.navigate('/event-detail?id=${encodeURIComponent(event.id)}')" class="inline-flex items-center rounded-lg bg-burnt-sienna-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-burnt-sienna-600">
                 Voir le détail
-            </a>
+            </button>
         </div>
     `;
 }
@@ -886,3 +1087,6 @@ function updatePagination() {
         }
     }
 }
+
+
+
