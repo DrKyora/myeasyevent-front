@@ -770,7 +770,6 @@ async function loadAdminUsers() {
         });
         
         const data = await response.json();
-        
         if (response.status === 403) {
             lib.ErrorToast.fire({ title: '⛔ Accès refusé : droits admin requis' });
             return;
@@ -790,9 +789,11 @@ async function loadAdminUsers() {
                 const pageUsers = allUsers.slice(start, end);
                 
                 // Afficher les lignes du tableau
-                usersTableBody.innerHTML = pageUsers.map(user => {
-                    return renderUserRow(user, userRowTemplate);
-                }).join('');
+                usersTableBody.innerHTML = '';
+                pageUsers.forEach(user => {
+                    const userRow = renderUserRow(user, userRowTemplate);
+                    usersTableBody.appendChild(userRow);
+                });
                 
                 // Attacher les événements
                 attachUserRowEvents();
@@ -883,12 +884,11 @@ function renderUserRow(user, template) {
         ? 'bg-burnt-sienna-500 text-white' 
         : 'bg-blue-dianne-500 text-white';
     
-    const isDeactivated = user.isDeactivated === 1 || user.isDeactivated === true;
+    const isDeactivated = user.isDeleted === 1 || user.isDeleted === true;
     const deactivatedText = isDeactivated ? 'Oui' : 'Non';
     const deactivateAction = isDeactivated ? 'Réactiver' : 'Désactiver';
     const toggleRoleText = user.isAdmin === true ? 'Retirer admin' : 'Promouvoir admin';
     
-    // Formater la date
     let validateDate = 'N/A';
     if (user.validateDate) {
         if (typeof moment !== 'undefined') {
@@ -897,8 +897,8 @@ function renderUserRow(user, template) {
             validateDate = new Date(user.validateDate).toLocaleDateString('fr-FR');
         }
     }
-    
-    return template
+
+    const userRowHtml = template
         .replace(/{{userId}}/g, user.id)
         .replace(/{{firstName}}/g, user.firstName || '')
         .replace(/{{lastName}}/g, user.lastName || '')
@@ -909,6 +909,15 @@ function renderUserRow(user, template) {
         .replace(/{{deactivatedText}}/g, deactivatedText)
         .replace(/{{deactivateAction}}/g, deactivateAction)
         .replace(/{{toggleRoleText}}/g, toggleRoleText);
+    
+    // Créer une ligne de tableau et ajouter le contenu du template
+    const row = document.createElement('tr');
+    row.setAttribute('data-user-id', user.id);
+    row.setAttribute('data-is-admin', user.isAdmin === true ? 'true' : 'false');
+    row.setAttribute('data-is-deactivated', isDeactivated ? 'true' : 'false');
+    row.innerHTML = userRowHtml;
+
+    return row;
 }
 
 function renderUserCard(user, template) {
@@ -916,7 +925,7 @@ function renderUserCard(user, template) {
         ? 'bg-burnt-sienna-500 text-white' 
         : 'bg-blue-dianne-500 text-white';
     
-    const isDeactivated = user.isDeactivated === 1 || user.isDeactivated === true;
+    const isDeactivated = user.isDeleted === 1 || user.isDeleted === true;
     const deactivatedText = isDeactivated ? 'Oui' : 'Non';  // ✅ Même que renderUserRow()
     const deactivateAction = isDeactivated ? 'Réactiver' : 'Désactiver';
     const toggleRoleText = user.isAdmin === true ? 'Retirer admin' : 'Promouvoir admin';
@@ -946,7 +955,12 @@ function renderUserCard(user, template) {
     // Créer un élément DOM comme renderDeviceCard()
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = cardHtml;
-    return tempDiv.firstElementChild;
+    const cardElement = tempDiv.firstElementChild;
+    // Ajouter l'attribut data-is-admin
+    cardElement.setAttribute('data-is-admin', user.isAdmin === true ? 'true' : 'false');
+    // Ajouter l'attribut data-is-deactivated
+    cardElement.setAttribute('data-is-deactivated', isDeactivated ? 'true' : 'false');
+    return cardElement;
 }
 
 function attachUserRowEvents() {
@@ -971,23 +985,25 @@ function attachUserRowEvents() {
         document.querySelectorAll('.user-menu').forEach(m => m.classList.add('hidden'));
     });
     
-    // Boutons Promouvoir/Retirer admin (pour ROWS du tableau)
+    // Boutons Promouvoir/Retirer admin
     document.querySelectorAll('tr[data-user-id] .btn-toggle-role').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const row = btn.closest('tr');
             const userId = row.dataset.userId;
-            await toggleUserRole(userId);
+            const isCurrentlyAdmin = row.dataset.isAdmin === 'true';
+            await toggleUserRole(userId, !isCurrentlyAdmin);
         });
     });
-    
-    // Boutons Désactiver/Réactiver (pour ROWS du tableau)
+
+    // Boutons Désactiver/Réactiver
     document.querySelectorAll('tr[data-user-id] .btn-deactivate').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const row = btn.closest('tr');
             const userId = row.dataset.userId;
-            await toggleUserDeactivation(userId);
+            const isCurrentlyDeactivated = row.dataset.isDeactivated === 'true';
+            await toggleUserDeactivation(userId, !isCurrentlyDeactivated);
         });
     });
 }
@@ -999,7 +1015,9 @@ function attachUserCardEvents() {
             e.stopPropagation();
             const card = btn.closest('[data-user-id]');
             const userId = card.dataset.userId;
-            await toggleUserRole(userId);
+            const isCurrentlyAdmin = card.dataset.isAdmin === 'true';
+            // Envoyer l'inverse : si admin, on retire (false), sinon on promeut (true)
+            await toggleUserRole(userId, !isCurrentlyAdmin);
         });
     });
     
@@ -1009,13 +1027,14 @@ function attachUserCardEvents() {
             e.stopPropagation();
             const card = btn.closest('[data-user-id]');
             const userId = card.dataset.userId;
-            await toggleUserDeactivation(userId);
+            const isCurrentlyDeactivated = card.dataset.isDeactivated === 'true';
+            await toggleUserDeactivation(userId, !isCurrentlyDeactivated);
         });
     });
 }
 
-async function toggleUserRole(userId) {
-    try {
+async function toggleUserRole(userId, isAdmin) {
+    try {        
         const result = await Swal.fire({
             title: 'Changer le rôle ?',
             html: '<p>Êtes-vous sûr de vouloir modifier le rôle de cet utilisateur ?</p>',
@@ -1029,23 +1048,23 @@ async function toggleUserRole(userId) {
         
         if (!result.isConfirmed) return;
         
+        const payload = {
+            action: 'updateUserRole',
+            userId: userId,
+            isAdmin: isAdmin,
+            session: lib.getCookie('MYEASYEVENT_Session'),
+            token: localStorage.getItem('MYEASYEVENT_Token')
+        };
+               
         const response = await fetch(`${lib.urlBackend}API/admin/adminUsers.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({
-                action: 'toggleUserRole',
-                userId: userId,
-                session: lib.getCookie('MYEASYEVENT_Session'),
-                token: localStorage.getItem('MYEASYEVENT_Token')
-            })
+            body: JSON.stringify(payload)
         });
-        
         const data = await response.json();
-        
         if (data.status === 'success') {
             lib.SuccessToast.fire({ title: 'Rôle modifié avec succès' });
-            // Recharger la liste
             loadedSections['gestion-utilisateurs'] = false;
             await loadSection('gestion-utilisateurs');
         } else {
@@ -1057,7 +1076,7 @@ async function toggleUserRole(userId) {
     }
 }
 
-async function toggleUserDeactivation(userId) {
+async function toggleUserDeactivation(userId, isDeleted) {
     try {
         const result = await Swal.fire({
             title: 'Modifier le statut ?',
@@ -1077,18 +1096,15 @@ async function toggleUserDeactivation(userId) {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
-                action: 'toggleUserDeactivation',
+                action: isDeleted ? 'desactivateUser' : 'reactivateUser',  // ← Action différente
                 userId: userId,
+                isDeleted: isDeleted,
                 session: lib.getCookie('MYEASYEVENT_Session'),
                 token: localStorage.getItem('MYEASYEVENT_Token')
             })
         });
-        
-        const data = await response.json();
-        
         if (data.status === 'success') {
             lib.SuccessToast.fire({ title: 'Statut modifié avec succès' });
-            // Recharger la liste
             loadedSections['gestion-utilisateurs'] = false;
             await loadSection('gestion-utilisateurs');
         } else {
